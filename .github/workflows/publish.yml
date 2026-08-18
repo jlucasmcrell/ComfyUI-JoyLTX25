@@ -1,0 +1,25 @@
+name: Publish to Comfy Registry
+
+# Fires when the version in pyproject.toml changes on master. The Registry
+# refuses a duplicate version, so the bump is trigger and guard at once.
+on:
+  push:
+    branches: [master]
+    paths: ['pyproject.toml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish custom node
+        uses: Comfy-Org/publish-node-action@v1
+        with:
+          # Repo secret: Settings > Secrets and variables > Actions.
+          # Never commit the token - it grants publish rights to every node
+          # under the publisher account, not just this one.
+          personal_access_token: ${{ secrets.REGISTRY_ACCESS_TOKEN }}

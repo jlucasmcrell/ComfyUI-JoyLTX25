@@ -1,0 +1,9 @@
+torch>=2.4.0
+torchvision>=0.19.0
+torchaudio>=2.4.0
+transformers>=4.50,<4.58
+safetensors>=0.4.0
+einops>=0.8
+numpy>=2.0
+scipy>=1.13
+Pillow>=10
