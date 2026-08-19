@@ -1787,12 +1787,12 @@
    ],
    "size": [
     420,
-    300
+    380
    ],
    "inputs": [],
    "outputs": [],
    "widgets_values": [
-    "TEST LANES (added 2026-08-19):\n- LoRA stack after the DiT loader: 4 slots, (none) skipped. DEV merges: official distilled LoRA at 0.4-0.6.\n- REFS BY NAME: put photos in ComfyUI/input/joyecho_refs/<name>/ (folder name = the name in the prompt). One photo per shot (the most-mentioned name, or [ref: name] to force); the sampler attaches it at frame 0 (ref_strength 0.5) - same person, no LoRA. Writer -> REFS -> sampler (cleaned prompts).\n- PROMPTS FROM FILE: your own shot list (--- separated or JSON) in input/joyltx_prompts/ - wire it into REFS BY NAME's prompts instead of the writer.\n- SaveAudio: the finished audio track as flac next to the video."
+    "PLUS LANES\n\nLoRA stack - up to four LoRAs on the DiT; (none) or strength 0 = skipped. On a DEV merge, the official LTX-2.5 distilled LoRA at 0.4-0.6 is what makes it few-step.\n\nREFS BY NAME - cast characters from folders. Put photos in ComfyUI/input/joyecho_refs/<name>/ (the folder name is the name you use in the prompt). The node picks one photo per character for the whole piece (the most-mentioned name in each shot, or write [ref: name] to force one) and the sampler attaches it at frame 0 (ref_strength 0.5). From a character's second shot on, their own rendered face from their first shot and their own voice are carried into every later shot of theirs. Use portraits or clean character shots - a busy scene photo drags its set into the shot.\n\nPROMPTS FROM FILE - write the shots yourself (--- between shots, or JSON) in input/joyltx_prompts/ and wire this node into REFS BY NAME in place of the writer.\n\nsave audio - the finished soundtrack as flac next to the video."
    ],
    "color": "#432",
    "bgcolor": "#653",

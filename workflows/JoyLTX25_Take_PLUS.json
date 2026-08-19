@@ -3206,12 +3206,12 @@
    ],
    "size": [
     420,
-    200
+    260
    ],
    "inputs": [],
    "outputs": [],
    "widgets_values": [
-    "TEST LANES (added 2026-08-19):\n- LoRA stack after the DiT loader (4 slots; DEV merges: distilled LoRA 0.4-0.6).\n- REFS BY NAME: photos in input/joyecho_refs/<name>/; the node reads the writer's shots, picks the named character's photo, and keyframes feeds it in at frame 0 (ref_strength 0.5) - the person in the photo is the person in the take.\n- SaveAudio: the finished audio as flac."
+    "PLUS LANES\n\nLoRA stack - up to four LoRAs on the DiT; (none) or strength 0 = skipped. On a DEV merge, the official LTX-2.5 distilled LoRA at 0.4-0.6 is what makes it few-step.\n\nREFS BY NAME - cast a character from a folder. Photos in ComfyUI/input/joyecho_refs/<name>/; the node reads the script, finds the named character, and keyframes attaches their photo at frame 0 (ref_strength 0.5) - the person in the photo is the person in the take, framing stays free. Use portraits, not busy scene photos.\n\nsave audio - the finished soundtrack as flac next to the video."
    ],
    "color": "#432",
    "bgcolor": "#653",
