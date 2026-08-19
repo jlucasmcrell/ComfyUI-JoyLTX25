@@ -3236,7 +3236,7 @@
     "Node name for S&R": "JoyLTX_LoadModel"
    },
    "widgets_values": [
-    "JoyLTX25v2\\LTX25dist-echoVid-070T30-v2-DiT-comfy-mix4x8-17.0GB.safetensors",
+    "LTX25dist-echoVid-070T30-v2-DiT-comfy-mix4x8-17.0GB.safetensors",
     "default"
    ],
    "color": "#232",
