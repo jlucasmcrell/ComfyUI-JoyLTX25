@@ -64,21 +64,36 @@ class JoyLTX_PromptFile:
                      "paragraph if there are no ---). .json: {\"prompts\": [...]} or a list."}),
         }, "optional": {
             "reload": ("BOOLEAN", {"default": True, "tooltip": "Re-read the file every run (turn off to cache)."}),
+            "mode": (["file (path)", "folder + index"], {"default": "file (path)", "tooltip":
+                     "file = the path above. folder + index = the N-th prompt file (sorted) in `folder`; wire `index` "
+                     "from a Primitive set to increment and queue the graph N times to render a folder of episodes unattended."}),
+            "folder": ("STRING", {"default": "joyltx_prompts", "tooltip": "Folder under ComfyUI/input (or absolute) holding .txt / .json prompt files."}),
+            "index": ("INT", {"default": 0, "min": 0, "max": 100000, "tooltip": "Which file (0-based, wraps). Wire a Primitive on 'increment' to walk the folder."}),
         }}
 
-    RETURN_TYPES = ("STRING", "INT")
-    RETURN_NAMES = ("prompts", "shot_count")
+    RETURN_TYPES = ("STRING", "INT", "STRING")
+    RETURN_NAMES = ("prompts", "shot_count", "name")
     FUNCTION = "read"
     CATEGORY = "JoyLTX"
     DESCRIPTION = "Shot prompts from a file (--- separated text or JSON) -> the sampler's prompts input."
 
     @classmethod
-    def IS_CHANGED(cls, path, reload=True):
-        p = cls._resolve(path)
+    def IS_CHANGED(cls, path, reload=True, mode="file (path)", folder="joyltx_prompts", index=0):
+        p = cls._pick(path, mode, folder, index)
         try:
-            return str(os.path.getmtime(p)) if reload else p
+            return ("%s:%s" % (p, os.path.getmtime(p))) if reload else p
         except Exception:
             return p
+
+    @classmethod
+    def _pick(cls, path, mode, folder, index):
+        if str(mode).startswith("folder"):
+            d = cls._resolve(folder)
+            files = sorted(f for f in (os.listdir(d) if os.path.isdir(d) else []) if f.lower().endswith((".txt", ".json")))
+            if not files:
+                return os.path.join(d, "(no .txt/.json files)")
+            return os.path.join(d, files[int(index) % len(files)])
+        return cls._resolve(path)
 
     @staticmethod
     def _resolve(path):
@@ -87,9 +102,9 @@ class JoyLTX_PromptFile:
             p = os.path.join(folder_paths.get_input_directory(), p)
         return p
 
-    def read(self, path, reload=True):
+    def read(self, path, reload=True, mode="file (path)", folder="joyltx_prompts", index=0):
         import json, re
-        p = self._resolve(path)
+        p = self._pick(path, mode, folder, index)
         if not os.path.isfile(p):
             raise RuntimeError("[JoyLTX PromptFile] not found: %s" % p)
         text = open(p, encoding="utf-8", errors="ignore").read()
@@ -104,8 +119,9 @@ class JoyLTX_PromptFile:
                 prompts = [s.strip() for s in re.split(r"^\s*---+\s*$", text, flags=re.M) if s.strip()]
             else:
                 prompts = [s.strip() for s in re.split(r"\n\s*\n", text) if s.strip()]
-        print("[JoyLTX PromptFile] %d prompt(s) from %s" % (len(prompts), p), flush=True)
-        return (json.dumps({"prompts": prompts}), len(prompts))
+        name = os.path.splitext(os.path.basename(p))[0]
+        print("[JoyLTX PromptFile] %d prompt(s) from %s%s" % (len(prompts), p, (" (index %d)" % int(index)) if str(mode).startswith("folder") else ""), flush=True)
+        return (json.dumps({"prompts": prompts}), len(prompts), name)
 
 
 NODE_CLASS_MAPPINGS = {"JoyLTX_LoraStack": JoyLTX_LoraStack, "JoyLTX_PromptFile": JoyLTX_PromptFile}
