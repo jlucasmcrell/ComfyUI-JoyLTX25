@@ -2,8 +2,8 @@
 
 Reads the shot prompts, finds character names that have a folder under <ComfyUI>/input/<refs_root>/<name>/
 (case-insensitive), and returns ONE reference image per shot (the first named character that has a folder;
-`pick` = first / random per shot / fixed by seed) plus a mask string of character names per shot ("zara,marcus,-") the sampler uses for its per-character identity and voice locks.
-Write "[ref: marcus]" (or "@marcus") in a shot to force its photo; the marker is stripped from the `prompts` output.
+`pick` = first / random per shot / fixed by seed) plus a mask string of character names per shot ("alice,bob,-") the sampler uses for its per-character identity and voice locks.
+Write "[ref: alice]" (or "@alice") in a shot to force its photo; the marker is stripped from the `prompts` output.
 Feed `ref_images` + `ref_mask` into the JoyLTX Multishot sampler: each shot's photo becomes an in-context
 keyframe at frame 0 (LTX-2.5 AddGuide, appended tokens, cropped after pass 1) at `ref_strength`, so the
 person in the folder is the person in the shot - no LoRA, no captions needed.
