@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-joyltx25"
 description = "Joy-LTX 2.5: JoyAI-Echo's performance on LTX-2.5. One-prompt takes with a VRAM-aware planner and multishot with seamless AV-extend joins (any length, one shot of VRAM)."
-version = "1.0.0"
+version = "1.1.0"
 license = { file = "LICENSE" }
 dependencies = []
 
