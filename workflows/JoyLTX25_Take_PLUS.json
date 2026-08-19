@@ -2917,11 +2917,11 @@
     "Node name for S&R": "JoyLTX_RefsByName"
    },
    "widgets_values": [
-    544,
-    544,
-    544,
-    544,
-    544,
+    "joyecho_refs",
+    "one per character (by seed)",
+    0,
+    "fixed",
+    960,
     544
    ],
    "color": "#232",
@@ -3232,7 +3232,7 @@
     "Node name for S&R": "JoyLTX_LoadModel"
    },
    "widgets_values": [
-    "LTX25dist-echoVid-070T30-v2-DiT-comfy-int8.safetensors",
+    "JoyLTX25v2\\LTX25dist-echoVid-070T30-v2-DiT-comfy-mix4x8-17.0GB.safetensors",
     "default"
    ],
    "color": "#232",

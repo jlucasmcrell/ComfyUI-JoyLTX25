@@ -1689,11 +1689,11 @@
     "Node name for S&R": "JoyLTX_RefsByName"
    },
    "widgets_values": [
-    960,
-    544,
+    "joyecho_refs",
+    "one per character (by seed)",
     0,
     "fixed",
-    544,
+    960,
     544
    ],
    "color": "#232",
@@ -1886,7 +1886,7 @@
     "",
     "",
     "http://localhost:11434/v1",
-    "deepseek-v4-pro:cloud",
+    "minimax-m3:cloud",
     3,
     0.7,
     0,
@@ -2129,7 +2129,10 @@
    },
    "widgets_values": [
     "joyltx_prompts/episode.txt",
-    true
+    true,
+    "folder + index",
+    "joyltx_prompts",
+    0
    ]
   },
   {
