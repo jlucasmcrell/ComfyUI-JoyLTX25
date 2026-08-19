@@ -333,7 +333,14 @@ class JoyLTX_Multishot:
             audio_out.append(wav.cpu())
             if cname and cname not in char_frame:      # first appearance: remember this character's rendered face + voice
                 mid = imgs.shape[0] // 2
-                char_frame[cname] = imgs[mid:mid + 1].cpu()
+                fr = imgs[mid:mid + 1].cpu()
+                # anchor on the PERSON, not the room: central upper 60 % of the frame, scaled back up
+                H_, W_ = fr.shape[1], fr.shape[2]
+                ch_, cw_ = int(H_ * 0.6), int(W_ * 0.6)
+                top_ = int((H_ - ch_) * 0.25); left_ = (W_ - cw_) // 2
+                crop_ = fr[:, top_:top_ + ch_, left_:left_ + cw_, :]
+                crop_ = torch.nn.functional.interpolate(crop_.movedim(-1, 1), size=(H_, W_), mode="bilinear", align_corners=False).movedim(1, -1)
+                char_frame[cname] = crop_.contiguous()
                 char_tail[cname] = prev_tail
                 char_tail2[cname] = prev_tail2
                 print(f"[JoyLTX Multishot] identity+voice lock set for '{cname}' from shot {i+1}", flush=True)

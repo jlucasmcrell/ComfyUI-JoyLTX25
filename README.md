@@ -14,6 +14,8 @@
   and voice carry into every later shot), **Prompts from File** (your own shot list), and **audio
   export** (flac). Start with the plain canvases; move to PLUS when you want any of those.
 
+Try it without installing anything: [the Joy-LTX 2.5 Space](https://huggingface.co/spaces/joeygambino/joy-ltx-25) (one take, ZeroGPU).
+
 Models: [GGUF](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-gguf) (RTX 30/40) ·
 [comfy-native](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-comfy-native) (RTX 50).
 Both doses in each: **070T30** (default, cleaner skin) and **100T50** (livelier performances).

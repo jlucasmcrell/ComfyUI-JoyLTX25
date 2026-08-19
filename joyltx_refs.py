@@ -45,9 +45,15 @@ def _characters(root):
     return out
 
 
-def _load(path, w, h):
+def _load(path, w, h, crop="portrait"):
     im = Image.open(path); im = ImageOps.exif_transpose(im).convert("RGB")
-    im = ImageOps.fit(im, (w, h), Image.LANCZOS, centering=(0.5, 0.35))   # faces sit high: bias the crop up
+    if crop == "portrait":
+        # keep the person, drop the set: the central upper 60 % of the photo (faces sit high), then fit
+        W, H = im.size
+        cw, ch = int(W * 0.6), int(H * 0.6)
+        left = (W - cw) // 2; top = int((H - ch) * 0.25)
+        im = im.crop((left, top, left + cw, top + ch))
+    im = ImageOps.fit(im, (w, h), Image.LANCZOS, centering=(0.5, 0.35))
     return torch.from_numpy(np.asarray(im).astype(np.float32) / 255.0)[None]
 
 
@@ -64,6 +70,10 @@ class JoyLTX_RefsByName:
             "seed": ("INT", {"default": 0, "min": 0, "max": 2**31 - 1}),
             "width": ("INT", {"default": 960, "min": 64, "max": 4096, "step": 32, "tooltip": "Render size (pass 1); the photos are fit to it."}),
             "height": ("INT", {"default": 544, "min": 64, "max": 4096, "step": 32}),
+        }, "optional": {
+            "crop": (["portrait (keep the person, drop the set)", "full photo"], {"default": "portrait (keep the person, drop the set)", "tooltip":
+                     "portrait = the central upper part of each photo, so the reference carries the face and not the room "
+                     "(a full scene photo drags its set into the shot)."}),
         }}
 
     RETURN_TYPES = ("IMAGE", "STRING", "STRING", "STRING")
@@ -72,7 +82,8 @@ class JoyLTX_RefsByName:
     CATEGORY = "JoyLTX"
     DESCRIPTION = "One reference photo per shot, picked by the character names in the prompts from input/<refs_root>/<name>/."
 
-    def run(self, prompts, refs_root="joyecho_refs", pick="random by seed", seed=0, width=960, height=544):
+    def run(self, prompts, refs_root="joyecho_refs", pick="random by seed", seed=0, width=960, height=544, crop="portrait (keep the person, drop the set)"):
+        cmode = "portrait" if str(crop).startswith("portrait") else "full"
         root = os.path.join(folder_paths.get_input_directory(), refs_root or "joyecho_refs")
         chars = _characters(root)
         shots = _parse_prompts(prompts)
@@ -114,7 +125,7 @@ class JoyLTX_RefsByName:
                 f = random.choice(files)
             else:
                 f = files[rng.randrange(len(files))]
-            imgs.append(_load(f, width, height)); mask.append(hit)
+            imgs.append(_load(f, width, height, cmode)); mask.append(hit)
             rep.append("shot %d: %s <- %s" % (i + 1, hit, os.path.basename(f)))
         if not imgs:
             imgs = [torch.zeros([1, height, width, 3])]; mask = ["-"]; rep = ["no shots"]
