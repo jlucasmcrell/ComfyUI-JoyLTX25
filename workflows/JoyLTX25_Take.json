@@ -132,38 +132,15 @@
   },
   {
    "id": 2,
-   "type": "UNETLoader",
+   "type": "JoyLTX_LoadModel",
    "pos": [
     -372.4215381305023,
     11.67755048135544
    ],
-   "size": [
-    499.17648608067316,
-    82
-   ],
    "flags": {},
    "order": 3,
    "mode": 0,
-   "inputs": [
-    {
-     "localized_name": "unet_name",
-     "name": "unet_name",
-     "type": "COMBO",
-     "widget": {
-      "name": "unet_name"
-     },
-     "link": null
-    },
-    {
-     "localized_name": "weight_dtype",
-     "name": "weight_dtype",
-     "type": "COMBO",
-     "widget": {
-      "name": "weight_dtype"
-     },
-     "link": null
-    }
-   ],
+   "inputs": [],
    "outputs": [
     {
      "localized_name": "MODEL",
@@ -176,14 +153,12 @@
      ]
     }
    ],
-   "title": "LTX-2.5 DiT   + weight dtype (VRAM)",
+   "title": "LTX-2.5 DiT  (safetensors or GGUF)",
    "properties": {
-    "cnr_id": "comfy-core",
-    "ver": "0.32.0",
-    "Node name for S&R": "UNETLoader"
+    "Node name for S&R": "JoyLTX_LoadModel"
    },
    "widgets_values": [
-    "LTX25dist-echoVid-070T30-DiT-comfy-int8.safetensors",
+    "LTX25dist-echoVid-070T30-v2-DiT-comfy-int8.safetensors",
     "default"
    ],
    "color": "#232",
@@ -3052,7 +3027,7 @@
    "title": "JOY-LTX 2.5 - read me",
    "properties": {},
    "widgets_values": [
-    "## Joy-LTX 2.5 - JoyAI-Echo's performance on LTX-2.5\n\n**DiT file** (models/diffusion_models): pick by card and GPU family. Both doses in every tier: **070T30** (default) / **100T50** (livelier; same links with `100T50` in the name).\n- 16 GB: [Q4_K_S.gguf](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-gguf/blob/main/LTX25dist-echoVid-070T30-DiT-Q4_K_S.gguf) (RTX 30/40) \u00b7 [comfy-w4a8](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-comfy-native/blob/main/LTX25dist-echoVid-070T30-DiT-comfy-w4a8.safetensors) or [comfy-nvfp4](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-comfy-native/blob/main/LTX25dist-echoVid-070T30-DiT-comfy-nvfp4.safetensors) (RTX 50) \u00b7 12 GB: [Q3_K_M.gguf](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-gguf/blob/main/LTX25dist-echoVid-070T30-DiT-Q3_K_M.gguf)\n- 24 GB: [Q5_K_M.gguf](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-gguf/blob/main/LTX25dist-echoVid-070T30-DiT-Q5_K_M.gguf) (RTX 30/40, the default) \u00b7 [Q6_K.gguf](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-gguf/blob/main/LTX25dist-echoVid-070T30-DiT-Q6_K.gguf) \u00b7 [comfy-mix4x8-17.0GB](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-comfy-native/blob/main/LTX25dist-echoVid-070T30-DiT-comfy-mix4x8-17.0GB.safetensors) (RTX 50)\n- 32 GB: [comfy-int8](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-comfy-native/blob/main/LTX25dist-echoVid-070T30-DiT-comfy-int8.safetensors) (fastest on RTX 50) \u00b7 [Q8_0.gguf](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-gguf/blob/main/LTX25dist-echoVid-070T30-DiT-Q8_0.gguf)\nGGUF = ComfyUI-GGUF's **Unet Loader (GGUF)** in place of the stock loader. comfy-native = stock **Load Diffusion Model**.\nAll files: [GGUF repo](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-gguf) \u00b7 [comfy-native repo](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-comfy-native) \u00b7 Civitai: **Joy-LTX 2.5** (models being uploaded now).\n\n**Also needed** (Lightricks/LTX-2.5 on Hugging Face): `ltx-2.5-video-vae-bf16` + `ltx-2.5-audio-vae-bf16` -> models/vae \u00b7 `ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0` -> models/latent_upscale_models (optional for 24 GB: `ltx-2.3-spatial-upscaler-x1.5-1.0` from LTX-2.3) \u00b7 text encoder `gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot` -> models/text_encoders (16 GB: the 10.6 GB `gemma4-12b-ltx25-comfy-w4a8` from LTX-2.5-Quantized).\n\n**Writer**: `writer_pack/ComfyUI_JoyAI_Echo_GGUF_Nodes` from this zip -> custom_nodes (our writing rules are inside; the Manager copy lacks them). Point it at an Ollama with a cloud model, or any OpenAI-compatible endpoint.\n\n**Speed**: on RTX 50 add `--enable-triton-backend` to the launch line for comfy-native files (about 2x). GGUF is unaffected.\n\nModels: huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-gguf \u00b7 huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-comfy-native\nNodes + canvases: github.com/jlucasmcrell/ComfyUI-JoyLTX25"
+    "## Joy-LTX 2.5 - JoyAI-Echo's performance on LTX-2.5\n\n**DiT file** (models/diffusion_models): pick by card and GPU family. Both doses in every tier: **070T30** (default) / **100T50** (livelier; same links with `100T50` in the name).\n- 16 GB: [Q4_K_S.gguf](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-gguf/blob/main/LTX25dist-echoVid-070T30-v2-DiT-Q4_K_S.gguf) (RTX 30/40) \u00b7 [comfy-w4a8](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-comfy-native/blob/main/LTX25dist-echoVid-070T30-v2-DiT-comfy-w4a8.safetensors) or [comfy-nvfp4](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-comfy-native/blob/main/LTX25dist-echoVid-070T30-v2-DiT-comfy-nvfp4.safetensors) (RTX 50) \u00b7 12 GB: [Q3_K_M.gguf](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-gguf/blob/main/LTX25dist-echoVid-070T30-v2-DiT-Q3_K_M.gguf)\n- 24 GB: [Q5_K_M.gguf](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-gguf/blob/main/LTX25dist-echoVid-070T30-v2-DiT-Q5_K_M.gguf) (RTX 30/40, the default) \u00b7 [Q6_K.gguf](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-gguf/blob/main/LTX25dist-echoVid-070T30-v2-DiT-Q6_K.gguf) \u00b7 [comfy-mix4x8-17.0GB](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-comfy-native/blob/main/LTX25dist-echoVid-070T30-v2-DiT-comfy-mix4x8-17.0GB.safetensors) (RTX 50)\n- 32 GB: [comfy-int8](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-comfy-native/blob/main/LTX25dist-echoVid-070T30-v2-DiT-comfy-int8.safetensors) (fastest on RTX 50) \u00b7 [Q8_0.gguf](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-gguf/blob/main/LTX25dist-echoVid-070T30-v2-DiT-Q8_0.gguf)\nThe canvas loader (**JoyLTX Load Model**) takes either family; `.gguf` needs **ComfyUI-GGUF** installed. RTX 30/40 = GGUF, RTX 50 = comfy-native.\nAll files: [GGUF repo](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-gguf) \u00b7 [comfy-native repo](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-comfy-native) \u00b7 [dev merges](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-dev) (bf16/fp8/int8, add your own distill LoRA) \u00b7 Civitai: **Joy-LTX 2.5**.\n\n**Also needed** (Lightricks/LTX-2.5 on Hugging Face): `ltx-2.5-video-vae-bf16` + `ltx-2.5-audio-vae-bf16` -> models/vae \u00b7 `ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0` -> models/latent_upscale_models (optional for 24 GB: `ltx-2.3-spatial-upscaler-x1.5-1.0` from LTX-2.3) \u00b7 text encoder `gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot` -> models/text_encoders (16 GB: the 10.6 GB `gemma4-12b-ltx25-comfy-w4a8` from LTX-2.5-Quantized).\n\n**Writer**: `writer_pack/ComfyUI_JoyAI_Echo_GGUF_Nodes` from this zip -> custom_nodes (our writing rules are inside; the Manager copy lacks them). Point it at an Ollama with a cloud model, or any OpenAI-compatible endpoint.\n\n**Speed**: on RTX 50 add `--enable-triton-backend` to the launch line for comfy-native files (about 2x). GGUF is unaffected.\n\nModels: huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-gguf \u00b7 huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-comfy-native\nNodes + canvases: github.com/jlucasmcrell/ComfyUI-JoyLTX25"
    ],
    "color": "#432",
    "bgcolor": "#653"
