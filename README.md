@@ -8,6 +8,11 @@
   (VRAM = one shot), joined by an **AV-extend**: the previous shot's last frames *and sound* are
   pinned into the next one, so a take can be as long as you like with no visible seam, or you
   can cut between angles and keep the same voice.
+- **JoyLTX25_Take_PLUS / JoyLTX25_Multishot_PLUS** — the same two canvases with four more lanes:
+  a **LoRA stack** (4 slots), **Refs by Name** (cast characters from `input/joyecho_refs/<name>/`
+  photo folders — one photo per character, and from their second shot on their own rendered face
+  and voice carry into every later shot), **Prompts from File** (your own shot list), and **audio
+  export** (flac). Start with the plain canvases; move to PLUS when you want any of those.
 
 Models: [GGUF](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-gguf) (RTX 30/40) ·
 [comfy-native](https://huggingface.co/joeygambino/joyai-echo-ltx25-echoVid-comfy-native) (RTX 50).

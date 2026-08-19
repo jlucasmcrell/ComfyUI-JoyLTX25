@@ -40,3 +40,13 @@ Optional END frame (the USE END FRAME gate) and/or MID keyframes (image batch + 
 
 ## Multishot: end_images / keyframe_strength
 One image per shot = keyframe at that shot's last frame (first->last-frame shots when combined with shot_images or identity_ref). Cropped after pass 1 automatically.
+
+
+## PLUS canvases
+
+- **JoyLTX LoRA Stack** – four slots on the DiT, each a LoRA file + strength; `(none)` or 0 = skipped. Model-only. On a DEV merge the official `ltx-2.5-22b-distilled-lora-450` at 0.4-0.6 makes it few-step.
+- **JoyLTX Refs by Name** – `refs_root` (default `joyecho_refs` under ComfyUI/input) holds one folder per character; the folder name is the name you write in the prompt. `pick` = one per character (default: the same photo in every shot), first, random per shot, random by seed. Outputs one photo per shot + a mask of character names + the cleaned prompts (`[ref: name]` markers stripped). Use portraits or clean character shots - a busy scene photo drags its set into the shot.
+- **Multishot sampler → ref_images / ref_mask / ref_strength** – each shot's photo is attached at frame 0 (appended, cropped after pass 1) at `ref_strength` (0.5). With character names in the mask, the sampler locks each character from their second shot on: their own rendered frame from their first shot at `identity_strength` plus the photo at half strength (visual lock), and in cut mode their own audio tail is pinned instead of the previous shot's (voice lock).
+- **Keyframes → ref_image / ref_strength** (Take) – the same frame-0 photo reference for a single take.
+- **JoyLTX Prompts from File** – `path` under ComfyUI/input (or absolute): `---`-separated text or `{"prompts": [...]}` JSON → the sampler's prompts.
+- **save audio** – core SaveAudio (flac) on the finished track.
