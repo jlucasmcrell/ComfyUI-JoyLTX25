@@ -7,6 +7,7 @@ dependencies = []
 
 [project.urls]
 Repository = "https://github.com/jlucasmcrell/ComfyUI-JoyLTX25"
+Documentation = "https://github.com/jlucasmcrell/ComfyUI-JoyLTX25/blob/master/README.md"
 
 [tool.comfy]
 PublisherId = "joeygambino"
