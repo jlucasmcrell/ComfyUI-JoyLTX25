@@ -23,6 +23,8 @@ for _m in ("joyltx_loader",      # JoyLTX_LoadModel: .safetensors or .gguf throu
            "joyltx_controls",    # JoyLTX_TakeControls (VRAM planner) + JoyLTX_AnySwitch
            "joyltx_script",      # JoyLTX_Script: writer shots -> one LTX prompt
            "joyltx_multishot",   # JoyLTX_Multishot: per-shot two-pass + AV-extend joins
+           "joyltx_refs",        # JoyLTX_RefsByName: reference photos by character name
+           "joyltx_lora",        # JoyLTX_LoraStack (4 slots) + JoyLTX_PromptFile
            "joyltx_writer_unload"):  # adds the free-VRAM switch to the JoyEcho writer (runtime patch)
     _merge(_m)
 

@@ -132,6 +132,16 @@ class JoyLTX_Multishot:
                                      "(first->last-frame shots when combined with shot_images / identity)."}),
             "keyframe_strength": ("FLOAT", {"default": 0.8, "min": 0.0, "max": 1.0, "step": 0.05,
                                   "tooltip": "How hard the end keyframes pull."}),
+            "ref_images": ("IMAGE", {"tooltip": "One REFERENCE PHOTO per shot (from JoyLTX Refs by Name, or any batch): "
+                                     "attached to that shot as an in-context keyframe at frame 0 (appended tokens, cropped "
+                                     "after pass 1) so the person in the photo is the person in the shot. Replaces the "
+                                     "frame-of-shot-1 identity for shots that have a photo."}),
+            "ref_mask": ("STRING", {"default": "", "tooltip": "Comma list, one token per shot from Refs by Name: the "
+                                    "CHARACTER NAME of that shot ('-' = none). With names, the sampler locks each character to "
+                                    "their own first rendered frame (visual lock) and their own audio tail (voice lock) in later "
+                                    "shots. 1/0 also accepted (photo / no photo)."}),
+            "ref_strength": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.05,
+                             "tooltip": "How hard a reference photo pulls. 0.4-0.6: the person, free framing."}),
         }}
 
     RETURN_TYPES = ("IMAGE", "AUDIO", "STRING")
@@ -195,7 +205,7 @@ class JoyLTX_Multishot:
             sigmas_pass2, video_cfg, audio_cfg, frame_rate, save_every_shot,
             identity_ref="cuts only: frame from shot 1", identity_strength=0.6,
             upscale_model=None, start_image=None, shot_images=None, image_strength=1.0,
-            end_images=None, keyframe_strength=0.8):
+            end_images=None, keyframe_strength=0.8, ref_images=None, ref_mask="", ref_strength=0.5):
         t0 = time.time()
         shots = _parse_prompts(prompts)
         if not shots:
@@ -217,6 +227,7 @@ class JoyLTX_Multishot:
 
         images_out, audio_out, sr = [], [], None
         prev_tail, prev_tail2 = None, None
+        char_frame, char_tail, char_tail2 = {}, {}, {}
         info = []
         for i, text in enumerate(shots):
             s_seed = seed + i if seed_per_shot else seed
@@ -234,9 +245,30 @@ class JoyLTX_Multishot:
             else:
                 vlat = {"samples": torch.zeros([1, 128, (frames - 1) // 8 + 1, h // 32, w // 32],
                                                device=comfy.model_management.intermediate_device())}
-            # ---- identity reference: a frame of an earlier shot as an in-context keyframe (appended, cropped later)
+            # ---- reference PHOTO for this shot (Refs by Name) + per-CHARACTER identity lock
+            #      ref_mask = one token per shot: a character name (from Refs by Name), or 1/0 (legacy).
+            #      First appearance of a character: their photo at ref_strength.
+            #      Later shots of the same character: their OWN rendered frame from their first shot at identity_strength
+            #      (the visual lock) + the photo at half ref_strength; and in cut mode their own audio tail is pinned
+            #      instead of the previous shot's (the voice lock), so alternating speakers keep their voices.
             has_guide = False
-            if i > 0 and identity_ref != "off" and identity_strength > 0 and first_img is None:
+            used_photo = False
+            mk = [m.strip() for m in str(ref_mask or "").split(",")]
+            tok = mk[i] if i < len(mk) else (mk[-1] if mk else "")
+            cname = None
+            if tok and tok not in ("0", "1", "-"):
+                cname = tok.lower()
+            has_photo = bool(tok) and tok not in ("0", "-") if mk and any(mk) else (ref_images is not None)
+            if ref_images is not None and ref_strength > 0 and first_img is None and has_photo and ref_images.shape[0] > 0:
+                rimg = ref_images[min(i, ref_images.shape[0] - 1): min(i, ref_images.shape[0] - 1) + 1]
+                if cname and cname in char_frame and identity_strength > 0:
+                    pos, negc, vlat = LTXVAddGuide.execute(pos, negc, video_vae, vlat, char_frame[cname], 0, float(identity_strength)).args
+                    pos, negc, vlat = LTXVAddGuide.execute(pos, negc, video_vae, vlat, rimg, 0, float(ref_strength) * 0.5).args
+                else:
+                    pos, negc, vlat = LTXVAddGuide.execute(pos, negc, video_vae, vlat, rimg, 0, float(ref_strength)).args
+                has_guide = True; used_photo = True
+            # ---- identity reference: a frame of an earlier shot as an in-context keyframe (appended, cropped later)
+            if not used_photo and i > 0 and identity_ref != "off" and identity_strength > 0 and first_img is None:
                 use = (identity_ref.startswith("all") or mode != "continue")
                 if use:
                     if identity_ref.endswith("previous shot"):
@@ -252,9 +284,12 @@ class JoyLTX_Multishot:
                 has_guide = True
             alat = _first(LTXVEmptyLatentAudio.execute(frames, frame_rate, 1, audio_vae))
             av = _first(LTXVConcatAVLatent.execute(vlat, alat))
-            # ---- pin the previous tail (AV extend), pass-1 grid
-            if prev_tail is not None and mode != "fresh":
-                av = self._pin(av, prev_tail, mode)
+            # ---- pin the previous tail (AV extend), pass-1 grid; in cut mode pin THIS character's own tail (voice lock)
+            pin_src, pin_src2 = prev_tail, prev_tail2
+            if mode != "continue" and cname and cname in char_tail:
+                pin_src, pin_src2 = char_tail[cname], char_tail2.get(cname)
+            if pin_src is not None and mode != "fresh":
+                av = self._pin(av, pin_src, mode)
             # ---- pass 1
             ts = time.time()
             out1 = self._sample(model, pos, negc, av, sig1, sampler, s_seed, video_cfg, audio_cfg)
@@ -270,8 +305,8 @@ class JoyLTX_Multishot:
                 up = _first(LTXVLatentUpsampler.execute(v1, upscale_model, video_vae))
                 av2 = _first(LTXVConcatAVLatent.execute(up, a1))
                 # pin the previous shot's REFINED tail too, so pass 2 does not re-draw the join
-                if prev_tail2 is not None and mode != "fresh":
-                    av2 = self._pin(av2, prev_tail2, mode)
+                if pin_src2 is not None and mode != "fresh":
+                    av2 = self._pin(av2, pin_src2, mode)
                 final = self._sample(model, pos, negc, av2, sig2, sampler, s_seed, video_cfg, audio_cfg)
                 prev_tail2 = self._tail(final, overlap)
             # ---- decode
@@ -296,6 +331,12 @@ class JoyLTX_Multishot:
                 wav = torch.nn.functional.pad(wav, (0, want - wav.shape[-1]))
             images_out.append(imgs.cpu())
             audio_out.append(wav.cpu())
+            if cname and cname not in char_frame:      # first appearance: remember this character's rendered face + voice
+                mid = imgs.shape[0] // 2
+                char_frame[cname] = imgs[mid:mid + 1].cpu()
+                char_tail[cname] = prev_tail
+                char_tail2[cname] = prev_tail2
+                print(f"[JoyLTX Multishot] identity+voice lock set for '{cname}' from shot {i+1}", flush=True)
             info.append(f"shot {i+1}/{n}: {imgs.shape[0]}f in {time.time()-ts:.0f}s")
             print(f"[JoyLTX Multishot] {info[-1]}", flush=True)
             comfy.model_management.soft_empty_cache()

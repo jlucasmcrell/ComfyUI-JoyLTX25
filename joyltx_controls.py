@@ -194,6 +194,10 @@ class JoyLTX_Keyframes:
             "optional": {
                 "end_image": ("IMAGE", {"tooltip": "Last frame of the take."}),
                 "mid_images": ("IMAGE", {"tooltip": "Batch of mid keyframes, in the order of mid_frame_indices."}),
+                "ref_image": ("IMAGE", {"tooltip": "A REFERENCE PHOTO of the person (e.g. from JoyLTX Refs by Name): "
+                                        "attached at frame 0 as a soft in-context reference at ref_strength - the person "
+                                        "in the photo is the person in the take, framing stays free."}),
+                "ref_strength": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.05}),
             },
         }
 
@@ -202,11 +206,15 @@ class JoyLTX_Keyframes:
     FUNCTION = "apply"
     CATEGORY = "JoyLTX"
 
-    def apply(self, positive, negative, vae, latent, strength, mid_frame_indices="", end_image=None, mid_images=None):
-        if end_image is None and mid_images is None:
+    def apply(self, positive, negative, vae, latent, strength, mid_frame_indices="", end_image=None, mid_images=None,
+              ref_image=None, ref_strength=0.5):
+        if end_image is None and mid_images is None and ref_image is None:
             return (positive, negative, latent)
         from comfy_extras.nodes_lt import LTXVAddGuide
         n = 0
+        if ref_image is not None and ref_strength > 0 and float(ref_image.abs().sum()) > 0:
+            positive, negative, latent = LTXVAddGuide.execute(positive, negative, vae, latent, ref_image[:1], 0, float(ref_strength)).args
+            n += 1
         if mid_images is not None and str(mid_frame_indices).strip():
             idxs = [int(float(x)) for x in str(mid_frame_indices).replace(";", ",").split(",") if x.strip()]
             for k, fi in enumerate(idxs[:mid_images.shape[0]]):
