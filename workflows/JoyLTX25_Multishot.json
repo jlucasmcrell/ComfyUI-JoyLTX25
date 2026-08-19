@@ -1410,7 +1410,7 @@
      ]
     }
    ],
-   "title": "LTX-2.5 DiT  (safetensors or GGUF)",
+   "title": "LTX-2.5 DiT",
    "properties": {
     "Node name for S&R": "JoyLTX_LoadModel"
    },

@@ -109,5 +109,5 @@ class JoyLTX_PromptFile:
 
 
 NODE_CLASS_MAPPINGS = {"JoyLTX_LoraStack": JoyLTX_LoraStack, "JoyLTX_PromptFile": JoyLTX_PromptFile}
-NODE_DISPLAY_NAME_MAPPINGS = {"JoyLTX_LoraStack": "JoyLTX LoRA Stack (4 slots, model only)",
+NODE_DISPLAY_NAME_MAPPINGS = {"JoyLTX_LoraStack": "JoyLTX LoRA Stack",
                               "JoyLTX_PromptFile": "JoyLTX Prompts from File"}

@@ -152,7 +152,7 @@
      ]
     }
    ],
-   "title": "LTX-2.5 DiT  (safetensors or GGUF)",
+   "title": "LTX-2.5 DiT",
    "properties": {
     "Node name for S&R": "JoyLTX_LoadModel"
    },
@@ -3074,7 +3074,7 @@
      ]
     }
    ],
-   "title": "LoRA stack  (4 slots; (none) = skipped; DEV merge: distilled LoRA 0.4-0.6)",
+   "title": "LoRA stack (4 slots)",
    "widgets_values": [
     "(none)",
     1.0,
@@ -3151,7 +3151,7 @@
      "links": []
     }
    ],
-   "title": "REFS BY NAME  (input/joyecho_refs/<character>/ -> one photo per shot; [ref: name] forces)",
+   "title": "REFS BY NAME",
    "widgets_values": [
     "",
     "joyecho_refs",
@@ -3184,7 +3184,7 @@
     }
    ],
    "outputs": [],
-   "title": "also save the audio track (flac)",
+   "title": "save audio (flac)",
    "widgets_values": [
     "audio/JoyLTX25/take"
    ],

@@ -107,4 +107,4 @@ class JoyLTX_LoadModel:
 
 
 NODE_CLASS_MAPPINGS = {"JoyLTX_LoadModel": JoyLTX_LoadModel}
-NODE_DISPLAY_NAME_MAPPINGS = {"JoyLTX_LoadModel": "JoyLTX Load Model (safetensors or GGUF)"}
+NODE_DISPLAY_NAME_MAPPINGS = {"JoyLTX_LoadModel": "JoyLTX Load Model"}

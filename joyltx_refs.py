@@ -125,4 +125,4 @@ class JoyLTX_RefsByName:
 
 
 NODE_CLASS_MAPPINGS = {"JoyLTX_RefsByName": JoyLTX_RefsByName}
-NODE_DISPLAY_NAME_MAPPINGS = {"JoyLTX_RefsByName": "JoyLTX Refs by Name (input/<root>/<character>/)"}
+NODE_DISPLAY_NAME_MAPPINGS = {"JoyLTX_RefsByName": "JoyLTX Refs by Name"}
