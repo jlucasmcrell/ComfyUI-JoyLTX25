@@ -33,6 +33,23 @@ def _parse_prompts(text):
     return [p.strip() for p in _SPLIT.split(t) if p.strip()]
 
 
+def _roots():
+    """Folders under ComfyUI/input that hold at least one sub-folder of images - the character libraries."""
+    base = folder_paths.get_input_directory(); out = []
+    try:
+        for d in sorted(os.listdir(base)):
+            p = os.path.join(base, d)
+            if not os.path.isdir(p) or d.startswith((".", "_")):
+                continue
+            for sub in os.listdir(p):
+                sp = os.path.join(p, sub)
+                if os.path.isdir(sp) and any(f.lower().endswith(_EXTS) for f in os.listdir(sp)):
+                    out.append(d); break
+    except Exception:
+        pass
+    return out or ["joyecho_refs"]
+
+
 def _characters(root):
     out = {}
     if os.path.isdir(root):
@@ -61,10 +78,11 @@ class JoyLTX_RefsByName:
     @classmethod
     def INPUT_TYPES(cls):
         return {"required": {
-            "prompts": ("STRING", {"forceInput": True, "tooltip": "The writer's shot prompts (JSON or --- list)."}),
-            "refs_root": ("STRING", {"default": "joyecho_refs", "tooltip":
+            "prompts": ("STRING", {"multiline": True, "default": "", "tooltip": "The writer's shot prompts (JSON or --- list). Normally wired from the writer or Prompts from File."}),
+            "refs_root": (_roots(), {"tooltip":
                           "Folder under ComfyUI/input holding one sub-folder per character (the folder NAME is the "
-                          "name the node looks for in each shot prompt, case-insensitive)."}),
+                          "name the node looks for in each shot prompt, case-insensitive). Restart or refresh ComfyUI "
+                          "to see folders you just added."}),
             "pick": (["one per character (by seed)", "first", "random per shot", "random by seed"], {"default": "one per character (by seed)", "tooltip":
                      "one per character = the SAME photo for a character in every shot (best identity)."}),
             "seed": ("INT", {"default": 0, "min": 0, "max": 2**31 - 1}),
@@ -82,7 +100,12 @@ class JoyLTX_RefsByName:
     CATEGORY = "JoyLTX"
     DESCRIPTION = "One reference photo per shot, picked by the character names in the prompts from input/<refs_root>/<name>/."
 
+    PICKS = ["one per character (by seed)", "first", "random per shot", "random by seed"]
+
     def run(self, prompts, refs_root="joyecho_refs", pick="random by seed", seed=0, width=960, height=544, crop="portrait (keep the person, drop the set)"):
+        if pick not in self.PICKS or not isinstance(refs_root, str) or refs_root in self.PICKS:
+            raise RuntimeError("[JoyLTX RefsByName] this node's widget values are shifted (refs_root=%r, pick=%r). "
+                               "Re-pick them in the node and save the workflow." % (refs_root, pick))
         cmode = "portrait" if str(crop).startswith("portrait") else "full"
         root = os.path.join(folder_paths.get_input_directory(), refs_root or "joyecho_refs")
         chars = _characters(root)

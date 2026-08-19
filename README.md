@@ -11,7 +11,7 @@
 - **JoyLTX25_Take_PLUS / JoyLTX25_Multishot_PLUS** — the same two canvases with four more lanes:
   a **LoRA stack** (4 slots), **Refs by Name** (cast characters from `input/joyecho_refs/<name>/`
   photo folders — one photo per character, and from their second shot on their own rendered face
-  and voice carry into every later shot), **Prompts from File** (your own shot list), and **audio
+  and voice carry into every later shot), **Story Source** (one panel: your premise, a file of story ideas walked one per queue, or finished shot prompts — with file dropdowns), and **audio
   export** (flac). Start with the plain canvases; move to PLUS when you want any of those.
 
 Try it without installing anything: [the Joy-LTX 2.5 Space](https://huggingface.co/spaces/joeygambino/joy-ltx-25) (one take, ZeroGPU).

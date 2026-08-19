@@ -1,8 +1,8 @@
 {
  "id": "joyltx25-take",
  "revision": 0,
- "last_node_id": 52,
- "last_link_id": 91,
+ "last_node_id": 56,
+ "last_link_id": 96,
  "nodes": [
   {
    "id": 35,
@@ -1743,7 +1743,7 @@
      "name": "STRING",
      "type": "STRING",
      "links": [
-      35
+      93
      ]
     }
    ],
@@ -2284,7 +2284,7 @@
      "name": "refs_attached",
      "shape": 7,
      "type": "BOOLEAN",
-     "link": null
+     "link": 96
     },
     {
      "localized_name": "story_idea",
@@ -2293,7 +2293,7 @@
      "widget": {
       "name": "story_idea"
      },
-     "link": 35
+     "link": 95
     },
     {
      "localized_name": "mode",
@@ -2690,7 +2690,7 @@
     "Node name for S&R": "Note"
    },
    "widgets_values": [
-    "PLUS LANES\n\nLoRA stack - up to four LoRAs on the DiT; (none) or strength 0 = skipped. On a DEV merge, the official LTX-2.5 distilled LoRA at 0.4-0.6 is what makes it few-step.\n\nREFS BY NAME - cast a character from a folder. Photos in ComfyUI/input/joyecho_refs/<name>/; the node reads the script, finds the named character, and keyframes attaches their photo at frame 0 (ref_strength 0.5) - the person in the photo is the person in the take, framing stays free. Use portraits, not busy scene photos.\n\nsave audio - the finished soundtrack as flac next to the video."
+    "PLUS LANES\n\nSTORY SOURCE - scene idea (the box) or one idea per run from a file in input/joyltx_ideas/ (--- between ideas; INDEX picks one, leave it on increment and queue once per idea). refs_attached on = the writer names the characters and points at the reference photographs instead of inventing a face.\n\nLoRA stack - up to four LoRAs on the DiT; (none) or strength 0 = skipped. On a DEV merge, the official LTX-2.5 distilled LoRA at 0.4-0.6 is what makes it few-step.\n\nREFS BY NAME - cast a character from a folder. Photos in ComfyUI/input/joyecho_refs/<name>/; the node reads the script, finds the named character, and keyframes attaches their photo at frame 0 (ref_strength 0.5) - the person in the photo is the person in the take, framing stays free. Use portraits, not busy scene photos.\n\nsave audio - the finished soundtrack as flac next to the video."
    ],
    "color": "#432",
    "bgcolor": "#653"
@@ -2836,7 +2836,10 @@
      "localized_name": "prompts",
      "name": "prompts",
      "type": "STRING",
-     "link": 87
+     "link": 87,
+     "widget": {
+      "name": "prompts"
+     }
     },
     {
      "localized_name": "refs_root",
@@ -2917,6 +2920,7 @@
     "Node name for S&R": "JoyLTX_RefsByName"
    },
    "widgets_values": [
+    "",
     "joyecho_refs",
     "one per character (by seed)",
     0,
@@ -3392,6 +3396,137 @@
     "auto",
     0
    ]
+  },
+  {
+   "id": 54,
+   "type": "JoyLTX_StorySource",
+   "pos": [
+    -1396,
+    333
+   ],
+   "flags": {},
+   "order": 0,
+   "mode": 0,
+   "title": "STORY SOURCE",
+   "inputs": [
+    {
+     "name": "scene_idea",
+     "type": "STRING",
+     "widget": {
+      "name": "scene_idea"
+     },
+     "link": 93
+    },
+    {
+     "name": "index",
+     "type": "INT",
+     "widget": {
+      "name": "index"
+     },
+     "link": 94
+    }
+   ],
+   "outputs": [
+    {
+     "name": "story_idea",
+     "type": "STRING",
+     "links": [
+      95
+     ]
+    },
+    {
+     "name": "file_prompts",
+     "type": "STRING",
+     "links": []
+    },
+    {
+     "name": "use_file",
+     "type": "BOOLEAN",
+     "links": []
+    },
+    {
+     "name": "refs_attached",
+     "type": "BOOLEAN",
+     "links": [
+      96
+     ]
+    },
+    {
+     "name": "name",
+     "type": "STRING",
+     "links": []
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "JoyLTX_StorySource"
+   },
+   "widgets_values": [
+    "scene idea (the box)",
+    "",
+    "joyltx_ideas/rift_s1_recovered.txt",
+    "joyltx_prompts/sample_two_shots.txt",
+    0,
+    true,
+    ""
+   ],
+   "color": "#232",
+   "bgcolor": "#353"
+  },
+  {
+   "id": 55,
+   "type": "PrimitiveInt",
+   "pos": [
+    -1396,
+    593
+   ],
+   "flags": {},
+   "order": 0,
+   "mode": 0,
+   "title": "INDEX (increment = next idea)",
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "INT",
+     "type": "INT",
+     "links": [
+      94
+     ]
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "PrimitiveInt",
+    "cnr_id": "comfy-core",
+    "ver": "0.32.0"
+   },
+   "widgets_values": [
+    0,
+    "increment"
+   ]
+  },
+  {
+   "id": 56,
+   "type": "Note",
+   "pos": [
+    229,
+    1066
+   ],
+   "size": [
+    330,
+    300
+   ],
+   "flags": {},
+   "order": 0,
+   "mode": 0,
+   "inputs": [],
+   "outputs": [],
+   "properties": {
+    "Node name for S&R": "Note"
+   },
+   "widgets_values": [
+    "REFS BY NAME\n\nCasting from folders. Put photos in ComfyUI/input/<refs_root>/<character>/ - one folder per character, the folder name is the name you use in the prompt (refs_root is a dropdown of the libraries it finds).\n\nThe node reads the shot prompts, finds the named character, and hands the sampler one photo per shot; the sampler attaches it at frame 0 (ref_strength 0.5), and from a character's second shot on their own rendered face and their own voice carry into every later shot of theirs.\n\npick - 'one per character' uses the same photo for a character all the way through (best identity). Write [ref: name] in a shot to force a particular character; the marker is stripped before rendering.\n\ncrop - portrait keeps the person and drops the room. Use portraits or clean character shots: a busy scene photo drags its set into the render."
+   ],
+   "color": "#432",
+   "bgcolor": "#653"
   }
  ],
  "links": [
@@ -3602,14 +3737,6 @@
    29,
    0,
    "VIDEO"
-  ],
-  [
-   35,
-   30,
-   0,
-   31,
-   1,
-   "STRING"
   ],
   [
    36,
@@ -4042,6 +4169,38 @@
    51,
    0,
    "AUDIO"
+  ],
+  [
+   93,
+   30,
+   0,
+   54,
+   0,
+   "STRING"
+  ],
+  [
+   94,
+   55,
+   0,
+   54,
+   1,
+   "INT"
+  ],
+  [
+   95,
+   54,
+   0,
+   31,
+   1,
+   "STRING"
+  ],
+  [
+   96,
+   54,
+   3,
+   31,
+   0,
+   "BOOLEAN"
   ]
  ],
  "groups": [

@@ -45,8 +45,21 @@ One image per shot = keyframe at that shot's last frame (first->last-frame shots
 ## PLUS canvases
 
 - **JoyLTX LoRA Stack** – four slots on the DiT, each a LoRA file + strength; `(none)` or 0 = skipped. Model-only. On a DEV merge the official `ltx-2.5-22b-distilled-lora-450` at 0.4-0.6 makes it few-step.
-- **JoyLTX Refs by Name** – `refs_root` (default `joyecho_refs` under ComfyUI/input) holds one folder per character; the folder name is the name you write in the prompt. `pick` = one per character (default: the same photo in every shot), first, random per shot, random by seed. Outputs one photo per shot + a mask of character names + the cleaned prompts (`[ref: name]` markers stripped). Use portraits or clean character shots - a busy scene photo drags its set into the shot.
+- **JoyLTX Refs by Name** – `refs_root` (a dropdown of the character libraries found under ComfyUI/input) holds one folder per character; the folder name is the name you write in the prompt. `pick` = one per character (default: the same photo in every shot), first, random per shot, random by seed. `crop` = portrait (keep the person, drop the set) or full photo. Outputs one photo per shot + a mask of character names + the cleaned prompts (`[ref: name]` markers stripped). Use portraits or clean character shots - a busy scene photo drags its set into the shot.
 - **Multishot sampler → ref_images / ref_mask / ref_strength** – each shot's photo is attached at frame 0 (appended, cropped after pass 1) at `ref_strength` (0.5). With character names in the mask, the sampler locks each character from their second shot on: their own rendered frame from their first shot at `identity_strength` plus the photo at half strength (visual lock), and in cut mode their own audio tail is pinned instead of the previous shot's (voice lock).
 - **Keyframes → ref_image / ref_strength** (Take) – the same frame-0 photo reference for a single take.
-- **JoyLTX Prompts from File** – `path` under ComfyUI/input (or absolute): `---`-separated text or `{"prompts": [...]}` JSON → the sampler's prompts.
+
+### JoyLTX Story Source (the PLUS canvases' story panel)
+One node decides where a run's words come from, and carries the settings that used to be loose primitives.
+- **source** – `scene idea (the box)` (the writer expands your premise) · `idea file (the writer writes each idea)` (INDEX picks one idea from a file) · `shot file (skip the writer)` (finished shot prompts render as written).
+- **scene_idea** – normally wired from the SCENE IDEA box.
+- **idea_file / shot_file** – dropdowns of everything under `ComfyUI/input` (`.txt` / `.json`). An entry ending in `/` is the whole folder: INDEX then picks the file. New files appear after a ComfyUI refresh (R) or restart.
+- **index** – which idea (or which file, for a folder). Wire a Primitive on `increment` and queue once per item to work through a file unattended; it wraps.
+- **refs_attached** – on: the writer uses each character's own name and writes "looks exactly as in the reference photographs" instead of inventing a face (what Refs by Name needs). Off: the writer describes people itself.
+- **manual_path** (optional) – a path outside `ComfyUI/input`; overrides the dropdown.
+- Outputs: `story_idea` → the writer · `use_file` → the prompts switch · `file_prompts` → that switch's ON side · `refs_attached` → the writer · `name` (source name, e.g. for a filename prefix).
+
+File formats: one block per idea or shot, `---` alone on a line between blocks; or JSON `{"prompts": [...]}` (`ideas` / `shots` also accepted).
+
+- **JoyLTX Prompts from File** *(superseded by Story Source; still available)* – `path` under ComfyUI/input (or absolute): `---`-separated text or `{"prompts": [...]}` JSON → the sampler's prompts.
 - **save audio** – core SaveAudio (flac) on the finished track.

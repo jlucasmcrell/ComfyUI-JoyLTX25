@@ -209,7 +209,11 @@ class JoyLTX_Multishot:
         t0 = time.time()
         shots = _parse_prompts(prompts)
         if not shots:
-            raise ValueError("LTX25 Multishot: no shot prompts (the writer output is empty).")
+            raise ValueError(
+                "JoyLTX Multishot: the prompts input is empty. If the node's `prompts` slot is not connected, this "
+                "canvas is a STALE copy in the browser - close the tab and open the workflow again from the sidebar "
+                "(ComfyUI drops links when a node's inputs change on disk). Otherwise check the writer / Prompts from "
+                "File node upstream is not bypassed or muted.")
         if shot_count > 0:
             shots = shots[:shot_count]
         n = len(shots)

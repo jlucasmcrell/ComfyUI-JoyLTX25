@@ -68,11 +68,13 @@ class JoyLTX_PromptFile:
                      "file = the path above. folder + index = the N-th prompt file (sorted) in `folder`; wire `index` "
                      "from a Primitive set to increment and queue the graph N times to render a folder of episodes unattended."}),
             "folder": ("STRING", {"default": "joyltx_prompts", "tooltip": "Folder under ComfyUI/input (or absolute) holding .txt / .json prompt files."}),
-            "index": ("INT", {"default": 0, "min": 0, "max": 100000, "tooltip": "Which file (0-based, wraps). Wire a Primitive on 'increment' to walk the folder."}),
+            "index": ("INT", {"default": 0, "min": 0, "max": 100000, "tooltip": "In 'folder + index' mode: which FILE (0-based, wraps). "
+                     "For the `block` output it is also which BLOCK inside the chosen file. Wire a Primitive on 'increment' and queue "
+                     "once per item to walk a folder of scripts, or a file of story ideas, unattended."}),
         }}
 
-    RETURN_TYPES = ("STRING", "INT", "STRING")
-    RETURN_NAMES = ("prompts", "shot_count", "name")
+    RETURN_TYPES = ("STRING", "INT", "STRING", "STRING")
+    RETURN_NAMES = ("prompts", "shot_count", "name", "block")
     FUNCTION = "read"
     CATEGORY = "JoyLTX"
     DESCRIPTION = "Shot prompts from a file (--- separated text or JSON) -> the sampler's prompts input."
@@ -120,8 +122,9 @@ class JoyLTX_PromptFile:
             else:
                 prompts = [s.strip() for s in re.split(r"\n\s*\n", text) if s.strip()]
         name = os.path.splitext(os.path.basename(p))[0]
+        block = prompts[int(index) % len(prompts)] if prompts else ""
         print("[JoyLTX PromptFile] %d prompt(s) from %s%s" % (len(prompts), p, (" (index %d)" % int(index)) if str(mode).startswith("folder") else ""), flush=True)
-        return (json.dumps({"prompts": prompts}), len(prompts), name)
+        return (json.dumps({"prompts": prompts}), len(prompts), name, block)
 
 
 NODE_CLASS_MAPPINGS = {"JoyLTX_LoraStack": JoyLTX_LoraStack, "JoyLTX_PromptFile": JoyLTX_PromptFile}
