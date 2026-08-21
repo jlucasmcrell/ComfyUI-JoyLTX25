@@ -123,15 +123,43 @@ class JoyLTX_RefsByName:
                 cand = (m.group(1) or m.group(2)).lower()
                 if cand in chars:
                     hit = cand
+                else:                                   # "[ref: zara_rift]" -> the zara folder
+                    base = cand
+                    while "_" in base and base not in chars:
+                        base = base.rsplit("_", 1)[0]
+                    if base in chars:
+                        hit = base
                 text = text[:m.start()] + text[m.end():]
                 text = re.sub(r"^[\s,.;:-]+", "", text)
+            # safety net: a "looks exactly as in the reference photographs" sentence whose subject
+            # has NO folder points the render model at photographs that are not attached - the
+            # sentence carries no information and costs the character their real description
+            # upstream. Strip it and say so, so the folder (or the premise) gets fixed.
+            for pm in list(re.finditer(
+                    r"([A-Za-z][\w'-]*(?:\s+[A-Za-z][\w'-]*)?)"
+                    r"((?:,[^.,]{0,60}){0,2},?\s+looks? exactly as in the reference photographs?[^.]*\.\s*)",
+                    text))[::-1]:
+                toks = []
+                for t in pm.group(1).split():
+                    t = t.lower().strip(",.")
+                    toks.append(t)
+                    while "_" in t:                     # zara_rift -> zara
+                        t = t.rsplit("_", 1)[0]
+                        toks.append(t)
+                if not any(t in chars for t in toks):
+                    text = text[:pm.start()] + text[pm.end():]
+                    rep.append("shot %d: removed the photo pointer for '%s' - no folder %s"
+                               % (i + 1, pm.group(1), os.path.join(root, toks[-1])))
             clean.append(text)
             low = text.lower()
             if hit is None:
                 # otherwise: the most-mentioned character; ties -> the earliest mention
                 counts = {}
                 for n in names:
-                    ms = [mm.start() for mm in re.finditer(r"(?<![a-z0-9_])" + re.escape(n) + r"(?![a-z0-9_])", low)]
+                    # trailing _suffix tolerated: the older corpus writes LoRA triggers
+                    # ("zara_rift", "alana_rift"), which matched no folder and cast nobody.
+                    ms = [mm.start() for mm in re.finditer(
+                        r"(?<![a-z0-9_])" + re.escape(n) + r"(?:_[a-z0-9]+)*(?![a-z0-9])", low)]
                     if ms:
                         counts[n] = (len(ms), -ms[0])
                 if counts:
@@ -160,3 +188,60 @@ class JoyLTX_RefsByName:
 
 NODE_CLASS_MAPPINGS = {"JoyLTX_RefsByName": JoyLTX_RefsByName}
 NODE_DISPLAY_NAME_MAPPINGS = {"JoyLTX_RefsByName": "JoyLTX Refs by Name"}
+
+class JoyLTX_RefImage:
+    """Manual reference: one loaded image (or a batch) instead of the folder library.
+
+    Wire a Load Image here and the outputs to the sampler's ref_images / ref_mask - same crop and
+    sizing as Refs by Name, no folders involved. One image = every shot; a batch = one per shot in
+    order (the last repeats). Give the character's name and the sampler's per-character identity
+    and voice locks apply to them; leave it blank and the photo is applied without the locks.
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": {
+            "image": ("IMAGE", {"tooltip": "The reference photo (Load Image). A batch = one per shot."}),
+            "width": ("INT", {"default": 960, "min": 64, "max": 4096, "step": 32,
+                      "tooltip": "Render size (pass 1) - wire from MASTER CONTROLS like Refs by Name."}),
+            "height": ("INT", {"default": 544, "min": 64, "max": 4096, "step": 32}),
+        }, "optional": {
+            "character": ("STRING", {"default": "", "tooltip":
+                          "Optional: who this is. Named, the sampler keeps their face AND voice locked "
+                          "across shots (same as a folder character). Blank: photo only, no locks."}),
+            "crop": (["portrait (keep the person, drop the set)", "full photo"],
+                     {"default": "portrait (keep the person, drop the set)"}),
+        }}
+
+    RETURN_TYPES = ("IMAGE", "STRING", "STRING")
+    RETURN_NAMES = ("ref_images", "ref_mask", "report")
+    FUNCTION = "run"
+    CATEGORY = "JoyLTX"
+    DESCRIPTION = "One reference photo by hand - no folder library, same crop/sizing as Refs by Name."
+
+    def run(self, image, width, height, character="", crop="portrait (keep the person, drop the set)"):
+        t = image[..., :3].float()
+        if str(crop).startswith("portrait"):
+            B, H, W, C = t.shape
+            ch, cw = int(H * 0.6), int(W * 0.6)
+            top = int((H - ch) * 0.25); left = (W - cw) // 2
+            t = t[:, top:top + ch, left:left + cw, :]
+        # cover-fit to the render size, face-high centering (matches Refs by Name's ImageOps.fit)
+        B, H, W, C = t.shape
+        sc = max(width / W, height / H)
+        nw, nh = max(width, int(round(W * sc))), max(height, int(round(H * sc)))
+        t = torch.nn.functional.interpolate(t.movedim(-1, 1), size=(nh, nw), mode="bilinear",
+                                            align_corners=False).movedim(1, -1)
+        left = max(0, (nw - width) // 2); top = max(0, int((nh - height) * 0.35))
+        t = t[:, top:top + height, left:left + width, :].contiguous()
+        name = re.sub(r"[^a-z0-9_-]", "", str(character or "").strip().lower())
+        mask = name if name else "1"
+        report = "manual ref: %d image(s) at %dx%d as %s" % (t.shape[0], width, height,
+                                                             ("'%s' (identity+voice locked)" % name) if name else "unnamed (no locks)")
+        print("[JoyLTX RefImage] " + report, flush=True)
+        return (t, mask, report)
+
+
+NODE_CLASS_MAPPINGS["JoyLTX_RefImage"] = JoyLTX_RefImage
+NODE_DISPLAY_NAME_MAPPINGS["JoyLTX_RefImage"] = "JoyLTX Ref Image (manual)"
+

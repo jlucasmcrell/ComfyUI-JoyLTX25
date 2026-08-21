@@ -17,6 +17,7 @@ loop and the masks. Prompts come in as the writer's JSON ({"prompts": [...]}) or
 """
 import json
 import math
+import os
 import re
 import time
 
@@ -140,8 +141,11 @@ class JoyLTX_Multishot:
                                     "CHARACTER NAME of that shot ('-' = none). With names, the sampler locks each character to "
                                     "their own first rendered frame (visual lock) and their own audio tail (voice lock) in later "
                                     "shots. 1/0 also accepted (photo / no photo)."}),
-            "ref_strength": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.05,
-                             "tooltip": "How hard a reference photo pulls. 0.4-0.6: the person, free framing."}),
+            "ref_strength": ("FLOAT", {"default": 0.85, "min": 0.0, "max": 1.0, "step": 0.05,
+                             "tooltip": "How hard a reference photo pulls (measured on one seed, 0.5/0.75/0.9/1.0). "
+                             "Below ~0.75 you get the hair and the clothes but a different face; 0.85-0.9 carries "
+                             "the face and the small things like glasses; 1.0 drags the photo's own room into the "
+                             "shot. Note the photograph does NOT carry age - the prompt has to say it."}),
         }}
 
     RETURN_TYPES = ("IMAGE", "AUDIO", "STRING")
@@ -177,8 +181,15 @@ class JoyLTX_Multishot:
         return v, a
 
     @staticmethod
-    def _pin(av, tail, mode):
-        """Pin the previous shot's tail (video+audio raw latents) at the head of `av` (noise mask 0)."""
+    def _pin(av, tail, mode, atail=None, pin_audio=True):
+        """Pin the previous shot's tail (video+audio raw latents) at the head of `av` (noise mask 0).
+
+        `atail` pins the AUDIO from a different tail than the picture - used when the speaker
+        changes but the take must stay seamless: the picture continues from the previous shot,
+        the voice comes from that speaker's own earlier shot. `pin_audio=False` leaves the audio
+        head free, so a speaker heard for the first time gets their own voice instead of
+        continuing the last one.
+        """
         v, a = av["samples"].unbind()
         v = v.clone(); a = a.clone()
         if "noise_mask" in av:
@@ -187,13 +198,16 @@ class JoyLTX_Multishot:
         else:
             mv, ma = torch.ones_like(v), torch.ones_like(a)
         pv, pa = tail
+        if atail is not None:
+            pa = atail[1]
         if mode == "continue" and pv.shape[-2:] == v.shape[-2:]:
             kv = min(pv.shape[2], v.shape[2] - 1)
             v[:, :, :kv] = pv[:, :, -kv:].to(v.device, v.dtype)
             mv[:, :, :kv] = 0.0
-        ka = min(pa.shape[2], a.shape[2] - 1)
-        a[:, :, :ka] = pa[:, :, -ka:].to(a.device, a.dtype)
-        ma[:, :, :ka] = 0.0
+        if pin_audio:
+            ka = min(pa.shape[2], a.shape[2] - 1)
+            a[:, :, :ka] = pa[:, :, -ka:].to(a.device, a.dtype)
+            ma[:, :, :ka] = 0.0
         out = dict(av)
         out["samples"] = comfy.nested_tensor.NestedTensor((v, a))
         out["noise_mask"] = comfy.nested_tensor.NestedTensor((mv, ma))
@@ -231,6 +245,13 @@ class JoyLTX_Multishot:
 
         images_out, audio_out, sr = [], [], None
         prev_tail, prev_tail2 = None, None
+        anchor_tail, anchor_tail2 = None, None   # shot 1's tails - the fixed voice anchor
+        # Distinct fixed voice sentences across the piece. At most one means the
+        # whole piece is one voice, so the audio head can be anchored to shot 1
+        # instead of walking shot-to-shot.
+        _voices = {m.group(0) for s in shots for m in re.finditer(r"voice is[^.]*\.", s)}
+        single_voice = len(_voices) <= 1
+        prev_cname = None                 # who spoke in the last shot - decides where the next voice is pinned from
         char_frame, char_tail, char_tail2 = {}, {}, {}
         info = []
         for i, text in enumerate(shots):
@@ -288,12 +309,50 @@ class JoyLTX_Multishot:
                 has_guide = True
             alat = _first(LTXVEmptyLatentAudio.execute(frames, frame_rate, 1, audio_vae))
             av = _first(LTXVConcatAVLatent.execute(vlat, alat))
-            # ---- pin the previous tail (AV extend), pass-1 grid; in cut mode pin THIS character's own tail (voice lock)
+            # ---- pin the previous tail (AV extend), pass-1 grid.
+            #      The pinned audio head decides the VOICE, so who speaks next decides where it comes from:
+            #        same speaker as the last shot -> the previous tail, the voice simply continues;
+            #        a speaker heard before        -> their OWN last tail (cut mode swaps the whole pin,
+            #                                        continue mode keeps the picture seam and swaps only the audio);
+            #        a speaker heard for the first time -> no audio pin at all, or they inherit the last voice.
             pin_src, pin_src2 = prev_tail, prev_tail2
-            if mode != "continue" and cname and cname in char_tail:
-                pin_src, pin_src2 = char_tail[cname], char_tail2.get(cname)
+            voice1 = voice2 = None
+            pin_audio = True
+            if cname and cname != prev_cname:
+                if cname in char_tail:
+                    if mode != "continue":
+                        pin_src, pin_src2 = char_tail[cname], char_tail2.get(cname)
+                    else:
+                        voice1, voice2 = char_tail[cname], char_tail2.get(cname)
+                    print("[JoyLTX Multishot] shot %d: voice for '%s' from their own earlier shot" % (i + 1, cname),
+                          flush=True)
+                elif prev_tail is not None:
+                    pin_audio = False
+                    print("[JoyLTX Multishot] shot %d: '%s' speaks for the first time - audio head left free so "
+                          "they do not inherit the previous voice" % (i + 1, cname), flush=True)
+            # ---- VOICE ANCHOR (cut mode). Pinning prev_tail makes each shot
+            #      imitate the previous shot's imitation - by shot 6 the voice
+            #      has walked (reported 2026-08-21: single unnamed speaker, cut
+            #      mode, identity gone by the tail of the piece). Anchor the
+            #      audio head to a FIXED tail instead: a named speaker to their
+            #      own first shot (every shot, not only on speaker changes),
+            #      an unnamed single-voice piece to shot 1. Safe in cut mode
+            #      because _pin copies the VIDEO half only under continue -
+            #      this swap touches nothing but the voice. Continue mode is
+            #      left alone: its audio genuinely continues through the seam.
+            #      JOYLTX_VOICE_WALK=1 restores the old behaviour for A/B.
+            if mode == "cut" and not os.environ.get("JOYLTX_VOICE_WALK"):
+                if cname and cname in char_tail:
+                    pin_src, pin_src2 = char_tail[cname], char_tail2.get(cname)
+                elif cname is None and single_voice and anchor_tail is not None:
+                    pin_src = anchor_tail
+                    pin_src2 = anchor_tail2 if anchor_tail2 is not None else pin_src2
+                    if i == 1:
+                        print("[JoyLTX Multishot] single-voice piece: audio head anchored to "
+                              "shot 1's tail for every later shot (JOYLTX_VOICE_WALK=1 reverts)",
+                              flush=True)
             if pin_src is not None and mode != "fresh":
-                av = self._pin(av, pin_src, mode)
+                av = self._pin(av, pin_src, mode, voice1, pin_audio)
             # ---- pass 1
             ts = time.time()
             out1 = self._sample(model, pos, negc, av, sig1, sampler, s_seed, video_cfg, audio_cfg)
@@ -303,6 +362,8 @@ class JoyLTX_Multishot:
             v1 = {"samples": v1["samples"]}; a1 = {"samples": a1["samples"]}   # no stale masks into pass 2
             out1 = _first(LTXVConcatAVLatent.execute(v1, a1))
             prev_tail = self._tail(out1, overlap)      # pin from PASS-1 latents (same grid as the next shot)
+            if anchor_tail is None:
+                anchor_tail = prev_tail                # shot 1's tail = the piece's voice anchor
             final = out1
             # ---- pass 2 (upscale + refine)
             if two_pass:
@@ -310,9 +371,11 @@ class JoyLTX_Multishot:
                 av2 = _first(LTXVConcatAVLatent.execute(up, a1))
                 # pin the previous shot's REFINED tail too, so pass 2 does not re-draw the join
                 if pin_src2 is not None and mode != "fresh":
-                    av2 = self._pin(av2, pin_src2, mode)
+                    av2 = self._pin(av2, pin_src2, mode, voice2, pin_audio)
                 final = self._sample(model, pos, negc, av2, sig2, sampler, s_seed, video_cfg, audio_cfg)
                 prev_tail2 = self._tail(final, overlap)
+                if anchor_tail2 is None:
+                    anchor_tail2 = prev_tail2
             # ---- decode
             vfin, afin = LTXVSeparateAVLatent.execute(final).args
             dec = VAEDecodeTiled().decode(video_vae, vfin, 512, 64, 64, 16)
@@ -348,12 +411,25 @@ class JoyLTX_Multishot:
                 char_tail[cname] = prev_tail
                 char_tail2[cname] = prev_tail2
                 print(f"[JoyLTX Multishot] identity+voice lock set for '{cname}' from shot {i+1}", flush=True)
+            prev_cname = cname
             info.append(f"shot {i+1}/{n}: {imgs.shape[0]}f in {time.time()-ts:.0f}s")
             print(f"[JoyLTX Multishot] {info[-1]}", flush=True)
             comfy.model_management.soft_empty_cache()
 
         images = torch.cat(images_out, dim=0)
-        audio = {"waveform": torch.cat(audio_out, dim=-1), "sample_rate": sr}
+        wav_all = torch.cat(audio_out, dim=-1)
+        # DECODE LIMITER. The audio VAE routinely decodes past full scale (measured 1.13-1.36),
+        # and everything downstream - the mux, SaveAudio, any player - hard-clips it, which is
+        # the "frying" on loud breaths and voices. Normalised once here, on the tensor this node
+        # actually returns, so no later trim/pad path can slip past it. -0.3 dBFS leaves headroom
+        # for the lossy encoder's inter-sample overshoot.
+        pk_all = float(wav_all.abs().max())
+        if pk_all > 0.97:
+            wav_all = wav_all * (0.97 / pk_all)
+        print("[JoyLTX Multishot] audio peak %.3f%s" % (pk_all,
+              " -> limited to 0.97 (was over full scale)" if pk_all > 0.97 else " (under FS, untouched)"),
+              flush=True)
+        audio = {"waveform": wav_all, "sample_rate": sr}
         total = f"{n} shots -> {images.shape[0]} frames (~{images.shape[0]/frame_rate:.1f}s) in {time.time()-t0:.0f}s"
         print(f"[JoyLTX Multishot] done: {total}", flush=True)
         return (images, audio, total + "\n" + "\n".join(info))

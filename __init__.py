@@ -26,6 +26,7 @@ for _m in ("joyltx_loader",      # JoyLTX_LoadModel: .safetensors or .gguf throu
            "joyltx_refs",        # JoyLTX_RefsByName: reference photos by character name
            "joyltx_lora",        # JoyLTX_LoraStack (4 slots) + JoyLTX_PromptFile
            "joyltx_source",      # JoyLTX_StorySource: scene idea / idea file / shot file in one panel
+           "joyltx_retake",      # JoyLTX_Retake: redo one time window of a finished clip
            "joyltx_writer_unload"):  # adds the free-VRAM switch to the JoyEcho writer (runtime patch)
     _merge(_m)
 

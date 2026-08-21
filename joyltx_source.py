@@ -23,24 +23,87 @@ _SPLIT = re.compile(r"^\s*---+\s*$", re.M)
 _TEXT = (".txt", ".json")
 
 
+_CORPUS_TAG = "corpus: "          # marks an entry that resolves against an inspire_prompts root
+
+
+def _corpus_roots():
+    """Every registered inspire_prompts root that exists, de-duplicated."""
+    try:
+        roots = folder_paths.get_folder_paths("inspire_prompts") or []
+    except Exception:
+        return []
+    out, seen = [], set()
+    for r in roots:
+        k = os.path.normcase(os.path.abspath(r))
+        if k not in seen and os.path.isdir(r):
+            seen.add(k)
+            out.append(r)
+    return out
+
+
+def _corpus_entries():
+    """The LPFF prompt store as pickable entries: every folder AND every file.
+
+    Entries are tagged `corpus: <path under the root>` rather than absolute, so the
+    dropdown stays readable; _resolve() searches the roots to turn one back into a
+    path. Absolute paths still resolve, so a canvas saved before this change keeps
+    working even though its entry is no longer offered.
+
+    Two things this deliberately does NOT do, both fixed 2026-08-21:
+      - prune folders whose name starts with "_": that is the corpus's own naming
+        convention (_ARCHIVE, _REWRITES_v9, _SURFACES, _COMMUNITY_TEST ...) and
+        pruning it hid 45 of 70 folders and 1226 of 1501 files;
+      - offer folders only: picking a single file was impossible, so a one-off file
+        had to be copied into input/ first.
+    """
+    dirs, files = set(), set()
+    try:
+        _inp = os.path.normcase(os.path.abspath(folder_paths.get_input_directory()))
+    except Exception:
+        _inp = None
+    for root in _corpus_roots():
+        # A root registered INSIDE input/ (a common extra_model_paths setup
+        # points inspire_prompts at input/rift_prompts/) is already covered by
+        # the input walk above - listing it again would
+        # double every one of its files in the dropdown.
+        if _inp and os.path.normcase(os.path.abspath(root)).startswith(_inp):
+            continue
+        rl = len(root.rstrip("/\\")) + 1
+        for dp, dn, fn in os.walk(root):
+            dn[:] = [d for d in dn if not d.startswith(".")]   # dot-hidden only
+            hits = [f for f in sorted(fn) if f.lower().endswith(_TEXT)]
+            if not hits:
+                continue
+            rel = dp[rl:].replace(os.sep, "/").strip("/")
+            dirs.add(_CORPUS_TAG + (rel + "/" if rel else ""))
+            files.update(_CORPUS_TAG + ("%s/%s" % (rel, f) if rel else f) for f in hits)
+    # Two roots can expose the same subtree (e.g. the inspire-pack copy and a
+    # central store registered side by side). Same tag, same
+    # resolution - _resolve walks the roots and takes the first that exists.
+    return sorted(dirs) + sorted(files)
+
+
 def _catalog():
-    """Every .txt / .json under ComfyUI/input (depth 3), plus each folder that holds some, as `folder/`.
-    Folder entries let INDEX walk a whole folder. Refresh ComfyUI to pick up new files."""
+    """Every .txt / .json under ComfyUI/input, plus each folder that holds some as
+    `folder/`, plus the whole inspire_prompts corpus. Folder entries let INDEX walk a
+    folder. Refresh ComfyUI to pick up new files.
+
+    There used to be a depth-3 cap here; on a real corpus that hid 2831 of 2959
+    files in input/ (2026-08-21). Walking the whole tree is cheap - a directory scan.
+    """
     base = folder_paths.get_input_directory()
     files, dirs = [], set()
     for root, dn, fn in os.walk(base):
-        rel = os.path.relpath(root, base)
-        if rel.count(os.sep) > 2:
-            dn[:] = []
-            continue
-        dn[:] = [d for d in dn if not d.startswith((".", "_"))]
+        dn[:] = [d for d in dn if not d.startswith(".")]
         hits = [f for f in sorted(fn) if f.lower().endswith(_TEXT)]
-        if hits:
-            r = "" if rel == "." else rel.replace(os.sep, "/") + "/"
-            if r:
-                dirs.add(r)
-            files += [r + f for f in hits]
-    return sorted(dirs) + sorted(files)
+        if not hits:
+            continue
+        rel = os.path.relpath(root, base)
+        r = "" if rel == "." else rel.replace(os.sep, "/") + "/"
+        if r:
+            dirs.add(r)
+        files += [r + f for f in hits]
+    return sorted(dirs) + sorted(files) + _corpus_entries()
 
 
 def _entries():
@@ -50,9 +113,18 @@ SOURCES = ["scene idea (the box)", "idea file (the writer writes each idea)", "s
 
 
 def _resolve(path):
+    """Entry -> absolute path. Handles `corpus: ...` tags, absolute paths, and
+    plain input-relative paths (the form every saved canvas uses)."""
     p = str(path or "").strip().strip('"')
     if not p:
         return ""
+    if p.startswith(_CORPUS_TAG):
+        rel = p[len(_CORPUS_TAG):].strip("/")
+        for root in _corpus_roots():
+            cand = os.path.join(root, rel.replace("/", os.sep))
+            if os.path.exists(cand):
+                return cand
+        return os.path.join(_corpus_roots()[0], rel.replace("/", os.sep)) if _corpus_roots() else rel
     return p if os.path.isabs(p) else os.path.join(folder_paths.get_input_directory(), p)
 
 
@@ -67,7 +139,25 @@ def _pick_file(path, index):
     return p
 
 
-def _blocks(path):
+_LPFF_POS = re.compile(r"(?ims)^[ \t]*positive[ \t]*:[ \t]*(.*?)(?=^[ \t]*negative[ \t]*:|\Z)")
+_LPFF_NEG = re.compile(r"(?ims)^[ \t]*negative[ \t]*:[ \t]*(.*?)(?=^[ \t]*positive[ \t]*:|\Z)")
+
+
+def _lpff(block):
+    """An LPFF block ("positive: ... / negative: ...") -> (positive, negative).
+
+    The Inspire-pack corpus is written this way, thousands of files of it. Fed in raw, the word
+    "positive:" and the whole negative line end up INSIDE the rendered prompt, so they are split
+    out here. A block with no "positive:" is already a plain prompt and passes through.
+    """
+    mp = _LPFF_POS.search(block)
+    if not mp:
+        return block.strip(), ""
+    mn = _LPFF_NEG.search(block)
+    return " ".join(mp.group(1).split()), (" ".join(mn.group(1).split()) if mn else "")
+
+
+def _blocks(path, want_negatives=False):
     if not os.path.isfile(path):
         raise RuntimeError("[JoyLTX StorySource] not found: %s" % path)
     text = open(path, encoding="utf-8", errors="ignore").read()
@@ -75,10 +165,16 @@ def _blocks(path):
         data = json.loads(text)
         if isinstance(data, dict):
             data = data.get("prompts") or data.get("ideas") or data.get("shots") or []
-        return [str(x).strip() for x in data if str(x).strip()]
+        out = [str(x).strip() for x in data if str(x).strip()]
+        return (out, [""] * len(out)) if want_negatives else out
     if _SPLIT.search(text):
-        return [b.strip() for b in _SPLIT.split(text) if b.strip()]
-    return [b.strip() for b in re.split(r"\n\s*\n", text) if b.strip()]
+        raw = [b for b in _SPLIT.split(text) if b.strip()]
+    else:
+        raw = [b for b in re.split(r"\n\s*\n", text) if b.strip()]
+    pairs = [_lpff(b) for b in raw]
+    pos = [p for p, _ in pairs if p]
+    neg = [n for p, n in pairs if p]
+    return (pos, neg) if want_negatives else pos
 
 
 class JoyLTX_StorySource:
@@ -111,8 +207,8 @@ class JoyLTX_StorySource:
                             "for whichever source is selected."}),
         }}
 
-    RETURN_TYPES = ("STRING", "STRING", "BOOLEAN", "BOOLEAN", "STRING")
-    RETURN_NAMES = ("story_idea", "file_prompts", "use_file", "refs_attached", "name")
+    RETURN_TYPES = ("STRING", "STRING", "BOOLEAN", "BOOLEAN", "STRING", "STRING")
+    RETURN_NAMES = ("story_idea", "file_prompts", "use_file", "refs_attached", "name", "negative")
     FUNCTION = "read"
     CATEGORY = "JoyLTX"
     DESCRIPTION = "Scene idea, idea file or finished shot file - one panel, wired once."
@@ -136,15 +232,21 @@ class JoyLTX_StorySource:
             if not str(scene_idea).strip():
                 raise RuntimeError("[JoyLTX StorySource] source is 'scene idea' but the box is empty.")
             print("[JoyLTX StorySource] scene idea from the box (%d chars)" % len(scene_idea), flush=True)
-            return (scene_idea, "", False, bool(refs_attached), "scene_idea")
+            return (scene_idea, "", False, bool(refs_attached), "scene_idea", "")
         if source.startswith("idea file"):
             p = _pick_file(idea_file, index); b = _blocks(p)
             i = int(index) % len(b)
             print("[JoyLTX StorySource] idea %d/%d from %s" % (i + 1, len(b), p), flush=True)
-            return (b[i], "", False, bool(refs_attached), "%s_%02d" % (os.path.splitext(os.path.basename(p))[0], i))
-        p = _pick_file(shot_file, index); b = _blocks(p)
-        print("[JoyLTX StorySource] %d finished shot prompt(s) from %s (writer skipped)" % (len(b), p), flush=True)
-        return ("", json.dumps({"prompts": b}), True, bool(refs_attached), os.path.splitext(os.path.basename(p))[0])
+            return (b[i], "", False, bool(refs_attached), "%s_%02d" % (os.path.splitext(os.path.basename(p))[0], i), "")
+        p = _pick_file(shot_file, index)
+        b, negs = _blocks(p, want_negatives=True)
+        neg = next((n for n in negs if n), "")
+        lpff = any(negs)
+        print("[JoyLTX StorySource] %d finished shot prompt(s) from %s (writer skipped)%s" %
+              (len(b), p, " | LPFF format: positive:/negative: split out, negative passed through"
+               if lpff else ""), flush=True)
+        return ("", json.dumps({"prompts": b}), True, bool(refs_attached),
+                os.path.splitext(os.path.basename(p))[0], neg)
 
 
 NODE_CLASS_MAPPINGS = {"JoyLTX_StorySource": JoyLTX_StorySource}

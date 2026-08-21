@@ -1,0 +1,765 @@
+{
+  "id": "joyltx25-retake",
+  "revision": 0,
+  "last_node_id": 56,
+  "last_link_id": 95,
+  "nodes": [
+    {
+      "id": 3,
+      "type": "CLIPLoader",
+      "pos": [
+        -371.8262747133547,
+        134.42227109780626
+      ],
+      "size": [
+        498.33837466598527,
+        106
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "clip_name",
+          "name": "clip_name",
+          "type": "COMBO",
+          "widget": {
+            "name": "clip_name"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "type",
+          "name": "type",
+          "type": "COMBO",
+          "widget": {
+            "name": "type"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "device",
+          "name": "device",
+          "shape": 7,
+          "type": "COMBO",
+          "widget": {
+            "name": "device"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "CLIP",
+          "name": "CLIP",
+          "type": "CLIP",
+          "slot_index": 0,
+          "links": [
+            89
+          ]
+        }
+      ],
+      "title": "LTX Gemma-4 encoder   + device (VRAM)",
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.32.0",
+        "Node name for S&R": "CLIPLoader"
+      },
+      "widgets_values": [
+        "gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors",
+        "ltxv",
+        "default"
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 4,
+      "type": "VAELoader",
+      "pos": [
+        -372.0043957130711,
+        281.6993425466315
+      ],
+      "size": [
+        499.8948369673561,
+        58
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "vae_name",
+          "name": "vae_name",
+          "type": "COMBO",
+          "widget": {
+            "name": "vae_name"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "VAE",
+          "name": "VAE",
+          "type": "VAE",
+          "slot_index": 0,
+          "links": [
+            90
+          ]
+        }
+      ],
+      "title": "LTX video VAE",
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.32.0",
+        "Node name for S&R": "VAELoader"
+      },
+      "widgets_values": [
+        "ltx-2.5-video-vae-bf16.safetensors"
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 5,
+      "type": "VAELoader",
+      "pos": [
+        -370.9780794766097,
+        379.6038566294246
+      ],
+      "size": [
+        498.86852073089494,
+        58
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "vae_name",
+          "name": "vae_name",
+          "type": "COMBO",
+          "widget": {
+            "name": "vae_name"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "VAE",
+          "name": "VAE",
+          "type": "VAE",
+          "slot_index": 0,
+          "links": [
+            91
+          ]
+        }
+      ],
+      "title": "LTX audio VAE",
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.32.0",
+        "Node name for S&R": "VAELoader"
+      },
+      "widgets_values": [
+        "ltx-2.5-audio-vae-bf16.safetensors"
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 49,
+      "type": "JoyLTX_LoraStack",
+      "pos": [
+        -56.4187829459116,
+        837.2795172327158
+      ],
+      "size": [
+        270,
+        226
+      ],
+      "flags": {},
+      "order": 23,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "model",
+          "name": "model",
+          "type": "MODEL",
+          "link": 84
+        },
+        {
+          "localized_name": "lora_1",
+          "name": "lora_1",
+          "type": "COMBO",
+          "widget": {
+            "name": "lora_1"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "strength_1",
+          "name": "strength_1",
+          "type": "FLOAT",
+          "widget": {
+            "name": "strength_1"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "lora_2",
+          "name": "lora_2",
+          "type": "COMBO",
+          "widget": {
+            "name": "lora_2"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "strength_2",
+          "name": "strength_2",
+          "type": "FLOAT",
+          "widget": {
+            "name": "strength_2"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "lora_3",
+          "name": "lora_3",
+          "type": "COMBO",
+          "widget": {
+            "name": "lora_3"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "strength_3",
+          "name": "strength_3",
+          "type": "FLOAT",
+          "widget": {
+            "name": "strength_3"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "lora_4",
+          "name": "lora_4",
+          "type": "COMBO",
+          "widget": {
+            "name": "lora_4"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "strength_4",
+          "name": "strength_4",
+          "type": "FLOAT",
+          "widget": {
+            "name": "strength_4"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "MODEL",
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            88
+          ]
+        }
+      ],
+      "title": "LoRA stack (4 slots)",
+      "properties": {
+        "Node name for S&R": "JoyLTX_LoraStack"
+      },
+      "widgets_values": [
+        "(none)",
+        1,
+        "(none)",
+        0,
+        "(none)",
+        0,
+        "(none)",
+        0
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 2,
+      "type": "JoyLTX_LoadModel",
+      "pos": [
+        -372.4215381305023,
+        11.67755048135544
+      ],
+      "size": [
+        498.0000724102724,
+        82
+      ],
+      "flags": {},
+      "order": 18,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "model_name",
+          "name": "model_name",
+          "type": "COMBO",
+          "widget": {
+            "name": "model_name"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "weight_dtype",
+          "name": "weight_dtype",
+          "shape": 7,
+          "type": "COMBO",
+          "widget": {
+            "name": "weight_dtype"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "MODEL",
+          "name": "MODEL",
+          "type": "MODEL",
+          "slot_index": 0,
+          "links": [
+            84
+          ]
+        }
+      ],
+      "title": "LTX-2.5 DiT",
+      "properties": {
+        "Node name for S&R": "JoyLTX_LoadModel"
+      },
+      "widgets_values": [
+        "LTX25dist-echoVid-070T30-v2-DiT-comfy-mix4x8-17.0GB.safetensors",
+        "default"
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 50,
+      "type": "LoadVideo",
+      "pos": [
+        -1400,
+        500
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VIDEO",
+          "type": "VIDEO",
+          "links": [
+            85
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadVideo"
+      },
+      "widgets_values": [
+        ""
+      ],
+      "title": "THE CLIP TO FIX"
+    },
+    {
+      "id": 51,
+      "type": "GetVideoComponents",
+      "pos": [
+        -1050,
+        500
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "video",
+          "type": "VIDEO",
+          "link": 85
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [
+            86
+          ]
+        },
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "links": [
+            87
+          ]
+        },
+        {
+          "name": "fps",
+          "type": "FLOAT",
+          "links": []
+        },
+        {
+          "name": "bit_depth",
+          "type": "INT",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "GetVideoComponents"
+      },
+      "widgets_values": [],
+      "title": "frames + audio"
+    },
+    {
+      "id": 52,
+      "type": "JoyLTX_Retake",
+      "pos": [
+        -700,
+        420
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 88
+        },
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 89
+        },
+        {
+          "name": "video_vae",
+          "type": "VAE",
+          "link": 90
+        },
+        {
+          "name": "audio_vae",
+          "type": "VAE",
+          "link": 91
+        },
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 86
+        },
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "link": 87
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [
+            92
+          ]
+        },
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "links": [
+            93,
+            95
+          ]
+        },
+        {
+          "name": "info",
+          "type": "STRING",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "JoyLTX_Retake"
+      },
+      "widgets_values": [
+        "",
+        "pc game, console game, video game, cartoon, childish, ugly",
+        0.0,
+        3.0,
+        "video + audio (redo the moment)",
+        0,
+        "fixed",
+        "euler_ancestral",
+        "1.0, 0.99375, 0.9875, 0.98125, 0.975, 0.909375, 0.725, 0.421875, 0.0",
+        1.0,
+        1.0,
+        24.0
+      ],
+      "title": "RETAKE (redo part of a clip)"
+    },
+    {
+      "id": 53,
+      "type": "CreateVideo",
+      "pos": [
+        -150,
+        460
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 92
+        },
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "link": 93
+        }
+      ],
+      "outputs": [
+        {
+          "name": "VIDEO",
+          "type": "VIDEO",
+          "links": [
+            94
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CreateVideo"
+      },
+      "widgets_values": [
+        24.0,
+        8
+      ],
+      "title": "rebuild the clip"
+    },
+    {
+      "id": 54,
+      "type": "SaveVideo",
+      "pos": [
+        150,
+        460
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "video",
+          "type": "VIDEO",
+          "link": 94
+        },
+        {
+          "name": "filename_prefix",
+          "type": "STRING",
+          "widget": {
+            "name": "filename_prefix"
+          },
+          "link": null
+        },
+        {
+          "name": "format",
+          "type": "COMBO",
+          "widget": {
+            "name": "format"
+          },
+          "link": null
+        },
+        {
+          "name": "codec",
+          "type": "COMBO",
+          "widget": {
+            "name": "codec"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video",
+          "type": "VIDEO",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SaveVideo"
+      },
+      "widgets_values": [
+        "video/JoyLTX25/retake",
+        "auto",
+        "auto"
+      ],
+      "title": "SAVE"
+    },
+    {
+      "id": 55,
+      "type": "SaveAudio",
+      "pos": [
+        150,
+        700
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "link": 95
+        }
+      ],
+      "outputs": [
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SaveAudio"
+      },
+      "widgets_values": [
+        "audio/JoyLTX25/retake"
+      ],
+      "title": "save audio (flac)"
+    },
+    {
+      "id": 56,
+      "type": "Note",
+      "pos": [
+        -1400,
+        780
+      ],
+      "size": [
+        420,
+        300
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "title": "START HERE",
+      "properties": {},
+      "widgets_values": [
+        "RETAKE - redo part of a clip you already rendered\n\nLoad the finished mp4, set the window, write a prompt for that moment. Everything outside the window is frozen exactly as it was; only the window is painted again.\n\nmode:\n  video + audio - redo the moment completely.\n  video only - keep the performance. The voice, the timing and the room tone are untouched, so the fixed clip still cuts against the rest.\n  audio only - keep the picture and change the line. Lip movement is whatever was rendered, so write the new line about as long as the old one.\n\nThe window snaps to the latent grid (8 frames, a third of a second at 24 fps). Under about a second there is not enough room for it to come out different.\n\nUse the SAME model, LoRAs and VAEs the clip was rendered with - the frozen material is raw latents from that model, and a different one will not match at the seam."
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    }
+  ],
+  "links": [
+    [
+      84,
+      2,
+      0,
+      49,
+      0,
+      "MODEL"
+    ],
+    [
+      85,
+      50,
+      0,
+      51,
+      0,
+      "VIDEO"
+    ],
+    [
+      86,
+      51,
+      0,
+      52,
+      4,
+      "IMAGE"
+    ],
+    [
+      87,
+      51,
+      1,
+      52,
+      5,
+      "AUDIO"
+    ],
+    [
+      88,
+      49,
+      0,
+      52,
+      0,
+      "MODEL"
+    ],
+    [
+      89,
+      3,
+      0,
+      52,
+      1,
+      "CLIP"
+    ],
+    [
+      90,
+      4,
+      0,
+      52,
+      2,
+      "VAE"
+    ],
+    [
+      91,
+      5,
+      0,
+      52,
+      3,
+      "VAE"
+    ],
+    [
+      92,
+      52,
+      0,
+      53,
+      0,
+      "IMAGE"
+    ],
+    [
+      93,
+      52,
+      1,
+      53,
+      1,
+      "AUDIO"
+    ],
+    [
+      94,
+      53,
+      0,
+      54,
+      0,
+      "VIDEO"
+    ],
+    [
+      95,
+      52,
+      1,
+      55,
+      0,
+      "AUDIO"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {},
+  "version": 0.4
+}

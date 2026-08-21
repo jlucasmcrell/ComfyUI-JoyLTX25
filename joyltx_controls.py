@@ -197,7 +197,7 @@ class JoyLTX_Keyframes:
                 "ref_image": ("IMAGE", {"tooltip": "A REFERENCE PHOTO of the person (e.g. from JoyLTX Refs by Name): "
                                         "attached at frame 0 as a soft in-context reference at ref_strength - the person "
                                         "in the photo is the person in the take, framing stays free."}),
-                "ref_strength": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.05}),
+                "ref_strength": ("FLOAT", {"default": 0.85, "min": 0.0, "max": 1.0, "step": 0.05}),
             },
         }
 

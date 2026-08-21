@@ -9,8 +9,27 @@ prompt per line-block separated by --- lines, or {"prompts": [...]} - so an epis
 (or by a previous run) drives the sampler without pasting.
 """
 import os
+import re
 import folder_paths
 import nodes
+
+
+def _ltx_gen(name):
+    """'3' / '5' from an LTX 2.3 / 2.5 file or folder name, else None."""
+    m = re.search(r"ltx[-_ ]?2[._]?([35])", str(name), re.I)
+    return m.group(1) if m else None
+
+
+def _lora_audio_keys(path):
+    """How many of the LoRA's keys touch the audio branch (safetensors header only, no load)."""
+    try:
+        import json as _json, struct as _struct
+        with open(path, "rb") as f:
+            n = _struct.unpack("<Q", f.read(8))[0]
+            head = _json.loads(f.read(n).decode("utf-8"))
+        return sum(1 for k in head if k != "__metadata__" and "audio" in k.lower())
+    except Exception:
+        return -1
 
 
 def _lora_names():
@@ -49,6 +68,20 @@ class JoyLTX_LoraStack:
                 continue
             if folder_paths.get_full_path("loras", name) is None:
                 raise RuntimeError("[JoyLTX LoraStack] LoRA file not found: %r (pick it again in slot %d)" % (name, i))
+            mgen = _ltx_gen(getattr(model, "joyltx_model_name", ""))
+            lgen = _ltx_gen(name)
+            if mgen and lgen and mgen != lgen:
+                naud = _lora_audio_keys(folder_paths.get_full_path("loras", name))
+                if naud > 0:
+                    print("[JoyLTX LoraStack] WARNING: %r is an LTX-2.%s LoRA with %d AUDIO-branch keys, "
+                          "applied to an LTX-2.%s model. The video branches transplant; the audio path does "
+                          "not - expect garbled or vanishing voices (measured: speech died 30 s into a take). "
+                          "Use the _VIDEOONLY variant of this LoRA, or the LTX-2.%s distilled LoRA."
+                          % (os.path.basename(name), lgen, naud, mgen, mgen), flush=True)
+                else:
+                    print("[JoyLTX LoraStack] note: %r is an LTX-2.%s LoRA on an LTX-2.%s model (video-only "
+                          "keys - fine, that transplant is measured)." % (os.path.basename(name), lgen, mgen),
+                          flush=True)
             model = loader.load_lora_model_only(model, name, s)[0]
             applied.append("%s @ %.2f" % (os.path.basename(name), s))
         print("[JoyLTX LoraStack] " + (", ".join(applied) if applied else "no LoRAs (all slots none/0)"), flush=True)

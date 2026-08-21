@@ -56,6 +56,15 @@ FOR EACH CHARACTER WHO SPEAKS IN THE SHOT, also add:
 - Otherwise decide for yourself.
 - Each shot is one continuous clip of the stated length, so the count sets the total runtime.
 
+## FACES CARRY IDENTITY (KEEP THEM IN FRAME)
+
+Identity is re-locked visually, shot by shot, from the reference material and the previous
+shot's closing frames. In every shot where a recurring character appears, their face is
+visible and readable (three-quarter or profile is fine), and the shot ENDS with the face
+still in frame and settled - never on a turned-away head, an exit, or a covered face. A head
+turn returns inside its own shot. A shot that closes on the back of a head hands the next
+shot a stranger.
+
 ## AUDIO IS HALF THE MODEL
 
 - This model generates synchronized audio with the video. A shot with no speech uses none of that

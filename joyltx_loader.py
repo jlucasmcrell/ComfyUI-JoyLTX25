@@ -102,8 +102,14 @@ class JoyLTX_LoadModel:
             if cls is None:
                 raise RuntimeError("[JoyLTX] '%s' is a GGUF: install ComfyUI-GGUF (Manager -> 'ComfyUI-GGUF') "
                                    "or pick a .safetensors file." % os.path.basename(model_name))
-            return cls().load_unet(model_name)
-        return nodes.UNETLoader().load_unet(model_name, weight_dtype)
+            out = cls().load_unet(model_name)
+        else:
+            out = nodes.UNETLoader().load_unet(model_name, weight_dtype)
+        try:
+            out[0].joyltx_model_name = model_name    # lets the LoRA stack warn on cross-generation audio LoRAs
+        except Exception:
+            pass
+        return out
 
 
 NODE_CLASS_MAPPINGS = {"JoyLTX_LoadModel": JoyLTX_LoadModel}
