@@ -351,6 +351,24 @@ class JoyLTX_Multishot:
                         print("[JoyLTX Multishot] single-voice piece: audio head anchored to "
                               "shot 1's tail for every later shot (JOYLTX_VOICE_WALK=1 reverts)",
                               flush=True)
+            elif mode == "continue" and not os.environ.get("JOYLTX_VOICE_WALK"):
+                # Same anchor for seamless takes, through the mechanism the
+                # speaker-change path already uses: swap ONLY the audio half of
+                # the pin (atail) - the picture seam still continues from the
+                # previous shot, which is what makes the take seamless. Scoping
+                # the 2026-08-21 anchor to cut mode assumed continue mode's
+                # audio "genuinely flows"; field result the same day: same-
+                # speaker shots still walked. The pinned head is trimmed on
+                # decode, so it conditions the voice without being heard.
+                if cname and cname in char_tail:
+                    voice1, voice2 = char_tail[cname], char_tail2.get(cname)
+                elif cname is None and single_voice and anchor_tail is not None:
+                    voice1 = anchor_tail
+                    voice2 = anchor_tail2
+                    if i == 1:
+                        print("[JoyLTX Multishot] seamless take, single voice: audio "
+                              "head anchored to shot 1 every shot; picture seam "
+                              "untouched (JOYLTX_VOICE_WALK=1 reverts)", flush=True)
             if pin_src is not None and mode != "fresh":
                 av = self._pin(av, pin_src, mode, voice1, pin_audio)
             # ---- pass 1
